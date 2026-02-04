@@ -73,3 +73,25 @@ export default defineConfig([
   },
 ])
 ```
+
+
+
+# pattern-backend
+This is the backend for knitting calculations. 
+
+example of usage:
+api address: http://localhost:3001/calculate
+sample inputs of body:
+{
+  "shape": "line",
+  "tension": {"x": 23, "y": 30},
+  "length": 20,
+  "return": "rows"
+}
+OR
+{
+  "shape": "rectangle",
+  "tension": {"x": 23, "y": 30},
+  "width": 20,
+  "height": 30
+}
