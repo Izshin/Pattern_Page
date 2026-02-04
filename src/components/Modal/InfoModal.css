@@ -1,0 +1,135 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.info-modal {
+    padding: 3rem 4rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    height: auto;
+    position: relative;
+    backdrop-filter: blur(10px);
+    background: rgba(var(--color-secondary-rgb), 0.95);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.233);
+    box-shadow: 0 8px 24px rgba(var(--color-accent-rgb), 0.35);
+    transform: scale(0.95) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.open .info-modal {
+    transform: scale(1) translateY(0);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 6px rgba(var(--color-accent-rgb), 0.7));
+}
+
+.modal-close:hover {
+    color: #a80000;
+}
+
+.modal-title-container {
+    width: 100%;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.modal-title-container h2 {
+    font-size: 5.6rem;
+    font-weight: 700;
+    line-height: 0.9;
+    color: var(--color-text);
+    letter-spacing: normal;
+    margin: 0;
+}
+
+.modal-content {
+    display: flex;
+    gap: 4rem;
+    align-items: flex-start;
+    flex: 1;
+    height: auto;
+}
+
+.modal-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-right: 2rem;
+}
+
+.modal-left h3 {
+    font-size: 2rem;
+    margin-top: -0.6rem;
+    font-weight: 350;
+    color: var(--color-text);
+    letter-spacing: normal;
+}
+
+.modal-left p {
+    font-size: 1.5rem;
+    line-height: 1.5;
+    color: var(--color-text);
+    text-align: left;
+    font-weight: 250;
+}
+
+.modal-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-placeholder {
+    width: 100%;
+    aspect-ratio: 16/9;
+    margin-top: 2rem;
+    background: rgba(255, 243, 209, 0.553);
+    border-radius: 8px;
+    border: 2px solid rgba(var(--color-accent-rgb), 0.933);
+    box-shadow: 0 8px 24px rgba(var(--color-accent-rgb), 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-placeholder img {
+    width: 64px;
+    height: 64px;
+    opacity: 0.5;
+}

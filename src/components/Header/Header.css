@@ -1,0 +1,111 @@
+.header {
+    height: 65px;
+    width: 95%;
+    max-width: 1400px;
+    border: 3px solid rgba(var(--color-accent-rgb), 0.1);
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    background: rgba(var(--color-secondary-rgb), 0.3);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    font-weight: 550;
+    font-size: 1.78rem;
+    transition: transform 0.3s ease-in-out, top 0.3s ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(var(--color-accent-rgb), 0.20), 0 2px 4px -1px rgba(var(--color-accent-rgb), 0.06);
+}
+
+.header-hidden {
+    transform: translate(-50%, -150%);
+    /* Move up and keep X centered */
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.logo-container img {
+    height: 60px;
+    /* Adjust this value to change logo size */
+    width: auto;
+}
+
+.header-nav {
+    display: flex;
+    gap: 7.6rem;
+    align-items: center;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--color-text);
+    /* Default text color */
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    color: var(--color-accent);
+    filter: drop-shadow(0 2px 4px rgba(var(--color-accent-rgb), 0.211));
+}
+
+.nav-icon {
+    width: 44px;
+    height: 44px;
+    color: var(--color-primary);
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+    color: var(--color-accent);
+    filter: drop-shadow(0 2px 4px rgba(var(--color-accent-rgb), 0.211));
+}
+
+/* Allow coloring the internal paths */
+.nav-icon path,
+.nav-icon rect,
+.nav-icon circle,
+.nav-icon polygon {
+    fill: currentColor;
+}
+
+.nav-item:first-child .nav-icon {
+    width: 44px;
+    height: 44px;
+}
+.nav-item:nth-child(2) .nav-icon {
+    width: 52px;
+    height: 52px;
+}
+
+.account-icon {
+    width: 45px;
+    height: 45px;
+    margin-top: 0.75rem;
+    color: var(--color-primary);
+    transition: all 0.2s ease;
+}
+
+/* Allow coloring the internal paths for account icon */
+.account-icon path,
+.account-icon rect,
+.account-icon circle,
+.account-icon polygon {
+    fill: currentColor;
+}
+
+.account-icon:hover {
+    color: var(--color-accent);
+    filter: drop-shadow(0 2px 4px rgba(var(--color-accent-rgb), 0.211));
+}

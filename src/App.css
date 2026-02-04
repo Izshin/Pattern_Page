@@ -1,0 +1,123 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Global/Reset from HomepageExperiment */
+h1,
+h2,
+h3 {
+    color: black;
+}
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+}
+
+/* Main Content Styles */
+.main-content {
+    margin-top: 80px;
+    flex: 1;
+    display: flex;
+    padding: 3rem 1rem;
+    gap: 2rem;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    justify-content: space-between;
+}
+
+/* Left Section Layout */
+.left-section {
+    flex: 0 1 550px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-left: 2rem;
+}
+
+/* Right Section Layout */
+.right-section {
+    flex: 0 1 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    padding-top: 4rem;
+    margin-right: 3rem;
+}
+
+/* Scroll Indicator */
+.info-scroll-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    border-radius: 14px;
+    cursor: pointer;
+    padding: 0.5rem 1.4rem;
+    transition: all 0.3s ease;
+    z-index: 100;
+    color: var(--color-accent);
+    font-weight: 600;
+    font-size: 1.4rem;
+    backdrop-filter: blur(10px);
+    background: rgba(var(--color-secondary-rgb), 0.5);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.233);
+    box-shadow: 0 8px 24px rgba(var(--color-accent-rgb), 0.35);
+
+    /* Soft shadow matching accent */
+}
+
+.info-scroll-button:hover {
+    box-shadow: 0 8px 24px rgba(var(--color-accent-rgb), 0.55);
+    border-color: rgba(var(--color-accent-rgb), 0.4);
+}
+
+.info-scroll-button.active {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+}
+
+.info-doc-icon {
+    width: 30px;
+    height: 30px;
+    /* Determine if fill or stroke is needed based on the SVG, usually currentcolor works */
+    color: currentColor;
+}
+
+.info-doc-icon path,
+.info-doc-icon rect,
+.info-doc-icon circle {
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 0.5px;
+    /* Adjust if needed */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .left-section,
+    .right-section {
+        flex: auto;
+        width: 100%;
+        margin: 0;
+    }
+
+    .right-section {
+        padding-top: 2rem;
+        gap: 4rem;
+    }
+}
