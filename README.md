@@ -1,11 +1,113 @@
-# React + TypeScript + Vite
+# Pattern Page - Knitting Pattern Designer
+
+A full-stack application for designing and customizing knitting patterns with a React frontend and Express backend.
+
+## 🚀 Installation Guide
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Frontend Setup
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+The frontend will run on `http://localhost:5173` by default.
+
+### Backend Setup
+
+1. **Navigate to the backend directory**
+   ```bash
+   cd backend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the backend server**
+   ```bash
+   npm run dev
+   ```
+
+The backend API will run on `http://localhost:3001`.
+
+### Running Both Servers
+
+For development, you'll need to run both servers simultaneously in separate terminals:
+
+**Terminal 1 (Frontend):**
+```bash
+npm run dev
+```
+
+**Terminal 2 (Backend):**
+```bash
+cd backend
+npm run dev
+```
+
+---
+
+## 📚 About
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+---
+
+## 🧶 Backend API Usage
+
+### Base URL
+`http://localhost:3001`
+
+### Calculate Endpoint
+
+**POST** `/calculate`
+
+#### Example Request Bodies
+
+**Line Shape:**
+```json
+{
+  "shape": "line",
+  "tension": {"x": 23, "y": 30},
+  "length": 20,
+  "return": "rows"
+}
+```
+
+**Rectangle Shape:**
+```json
+{
+  "shape": "rectangle",
+  "tension": {"x": 23, "y": 30},
+  "width": 20,
+  "height": 30
+}
+```
+
+---
+
+## 🛠️ Technical Details
 
 ## React Compiler
 
@@ -74,24 +176,8 @@ export default defineConfig([
 ])
 ```
 
+---
 
+## 📄 License
 
-# pattern-backend
-This is the backend for knitting calculations. 
-
-example of usage:
-api address: http://localhost:3001/calculate
-sample inputs of body:
-{
-  "shape": "line",
-  "tension": {"x": 23, "y": 30},
-  "length": 20,
-  "return": "rows"
-}
-OR
-{
-  "shape": "rectangle",
-  "tension": {"x": 23, "y": 30},
-  "width": 20,
-  "height": 30
-}
+This project is licensed under the ISC License.
