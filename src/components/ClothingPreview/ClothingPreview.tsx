@@ -1,68 +1,50 @@
-import { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Group, Image as KonvaImage, Rect } from 'react-konva';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import './ClothingPreview.css';
-import SweaterIcon from '../../assets/Logos/SweaterIcon.svg?react';
-import { useMotifLogic } from './hooks/useMotifLogic';
-import DraggableMotif from './Motif/DraggableMotif';
+import { ClothingDropdown, PatternCanvas } from './components';
+import { useMotifLogic } from './hooks/useMotifLogicRefactored';
+import { usePatternConfig } from './hooks/usePatternConfig';
+import { DimensionCalculator } from './services';
 import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png';
 
 interface ClothingPreviewProps {
     blanketDimensions?: { width: number; height: number };
 }
 
-const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = { width: 60, height: 80 } }) => {
-    const [isClothingDropdownOpen, setIsClothingDropdownOpen] = useState(false);
-    const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
+/**
+ * Refactored ClothingPreview component using clean architecture
+ * - Separated concerns: UI components, business logic, and services
+ * - Uses service classes for calculations and motif management
+ * - Improved component composition
+ */
+const ClothingPreview: React.FC<ClothingPreviewProps> = ({ 
+    blanketDimensions = { width: 60, height: 80 } 
+}) => {
+    // Pattern configuration from URL
+    const patternConfig = usePatternConfig(blanketDimensions);
+    
+    // Dimension calculator service (memoized)
+    const dimensionCalculator = useMemo(() => new DimensionCalculator(), []);
 
-    // Get current pattern from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentPattern = urlParams.get('pattern') || 'BabyBlanket';
-    const isBabyBlanket = currentPattern === 'BabyBlanket';
+    // Calculate display dimensions for baby blanket
+    const blanketCalc = useMemo(() => {
+        if (!patternConfig.isBabyBlanket) return null;
+        return dimensionCalculator.calculate(
+            patternConfig.dimensions || blanketDimensions
+        );
+    }, [patternConfig, dimensionCalculator, blanketDimensions]);
 
-    // Strict mode duplicate prevention
-    const initialized = useRef(false);
-
-    // Load baby blanket image
-    useEffect(() => {
-        if (isBabyBlanket) {
-            const img = new window.Image();
-            img.src = BabyBlanketImage;
-            img.onload = () => {
-                setBlanketImage(img);
-            };
+    // Design bounds based on pattern type
+    const designBounds = useMemo(() => {
+        if (blanketCalc) {
+            return blanketCalc.bounds;
         }
-    }, [isBabyBlanket]);
+        return dimensionCalculator.getDefaultDesignBounds();
+    }, [blanketCalc, dimensionCalculator]);
 
-    // Calculate blanket dimensions and bounds BEFORE useMotifLogic
-    const containerWidth = 400;
-    const containerHeight = 500;
-    const padding = 20;
-    const maxBlanketSize = 140; // cm
+    // Stage dimensions
+    const stageDimensions = dimensionCalculator.getStageDimensions();
 
-    const actualWidth = blanketDimensions.width;
-    const actualHeight = blanketDimensions.height;
-
-    const availableWidth = containerWidth - (padding * 2);
-    const availableHeight = containerHeight - (padding * 2);
-
-    const scaleX = availableWidth / maxBlanketSize;
-    const scaleY = availableHeight / maxBlanketSize;
-    const scale = Math.min(scaleX, scaleY);
-
-    const displayWidth = actualWidth * scale;
-    const displayHeight = actualHeight * scale;
-
-    const blanketX = padding + (availableWidth - displayWidth) / 2;
-    const blanketY = padding + (availableHeight - displayHeight) / 2;
-   
-    const blanketBounds = {
-        left: blanketX ,
-        top: blanketY ,
-        right: blanketX + displayWidth ,
-        bottom: blanketY + displayHeight 
-    };
-
-    // Motif Logic - pass blanketBounds for baby blanket mode
+    // Motif management hook with design bounds
     const {
         placedMotifs,
         selectedId,
@@ -71,35 +53,35 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
         updateMotif,
         duplicateMotif,
         deleteMotif,
-        designBounds,
-        stageDimensions,
         motifCount,
         maxMotifs
-    } = useMotifLogic(isBabyBlanket ? blanketBounds : undefined);
+    } = useMotifLogic({ designBounds });
 
-    // Auto-add a demo motif on mount for "Inspiration"
+    // Baby blanket image state
+    const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
+    const initialized = useRef(false);
+
+    // Load baby blanket image
+    useEffect(() => {
+        if (patternConfig.isBabyBlanket) {
+            const img = new window.Image();
+            img.src = BabyBlanketImage;
+            img.onload = () => setBlanketImage(img);
+        }
+    }, [patternConfig.isBabyBlanket]);
+
+    // Auto-add initial demo motif
     useEffect(() => {
         if (!initialized.current) {
             initialized.current = true;
-            // "use image icon instead of sweater icon"
             addMotif('/IconsImages/ImageIcon.png');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Deselect when clicking on empty stage area
-    const checkDeselect = (e: any) => {
-        // deselect when clicked on empty area (and not on a motif)
-        const clickedOnStage = e.target === e.target.getStage();
-        if (clickedOnStage) {
-            selectMotif(null);
-        }
-    };
-
-    // Deselect when clicking outside the canvas entirely
+    // Deselect motif when clicking outside canvas
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
-            // Check if click is inside the Konva container (class 'konvajs-content')
             const target = e.target as HTMLElement;
             if (!target.closest('.konvajs-content')) {
                 selectMotif(null);
@@ -107,176 +89,44 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
         };
 
         window.addEventListener('mousedown', handleGlobalClick);
-        return () => {
-            window.removeEventListener('mousedown', handleGlobalClick);
-        };
+        return () => window.removeEventListener('mousedown', handleGlobalClick);
     }, [selectMotif]);
+
+    // Prepare blanket display data
+    const blanketDisplay = useMemo(() => {
+        if (!patternConfig.isBabyBlanket || !blanketImage || !blanketCalc) {
+            return undefined;
+        }
+
+        return {
+            image: blanketImage,
+            x: blanketCalc.x,
+            y: blanketCalc.y,
+            width: blanketCalc.displayWidth,
+            height: blanketCalc.displayHeight,
+            bounds: blanketCalc.bounds
+        };
+    }, [patternConfig.isBabyBlanket, blanketImage, blanketCalc]);
 
     return (
         <>
-            <div className="clothing-dropdown">
-                <button
-                    className="dropdown-button"
-                    onClick={() => setIsClothingDropdownOpen(!isClothingDropdownOpen)}
-                >
-                    Clothing
-                    <svg
-                        width="30"
-                        height="30"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        className={isClothingDropdownOpen ? 'rotated' : ''}
-                    >
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                </button>
+            <ClothingDropdown />
 
-                {isClothingDropdownOpen && (
-                    <div className="dropdown-menu">
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=BabyBlanket'}>
-                            <div className="dropdown-item-content">
-                                <img src="/src/assets/Patterns/BabybBlanketPatternImage.png" alt="Baby Blankets" />
-                                <span>Baby Blankets</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Hat'}>
-                            <div className="dropdown-item-content">
-                                <SweaterIcon />
-                                <span>Hats</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Scarf'}>
-                            <div className="dropdown-item-content">
-                                <img src="/IconsImages/ScarfIcon.png" alt="Scarfs" />
-                                <span>Scarfs</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Sweater'}>
-                            <div className="dropdown-item-content">
-                                <img src="/IconsImages/SweaterIcon.png" alt="Sweaters" />
-                                <span>Sweaters</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Mittens'}>
-                            <div className="dropdown-item-content">
-                                <img src="/IconsImages/MittensIcon.png" alt="Mittens" />
-                                <span>Mittens</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Bag'}>
-                            <div className="dropdown-item-content">
-                                <img src="/IconsImages/BagIcon.png" alt="Bags" />
-                                <span>Bags</span>
-                            </div>
-                            <span className="dropdown-item-arrow">›</span>
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <div className={`sweater-preview ${isClothingDropdownOpen ? 'dropdown-open' : ''}`}>
+            <div className="sweater-preview">
                 <div className="sweater-container">
-                    {isBabyBlanket ? (
-                        /* Baby Blanket View */
-                        <Stage
-                            width={containerWidth}
-                            height={containerHeight}
-                            onMouseDown={checkDeselect}
-                            onTouchStart={checkDeselect}
-                            className="motif-stage blanket-stage"
-                        >
-                            <Layer>
-                                {/* Container background */}
-                                <Rect
-                                    x={0}
-                                    y={0}
-                                    width={containerWidth}
-                                    height={containerHeight}
-                                    fill="#f5f5f5"
-                                    stroke="#ccc"
-                                    strokeWidth={2}
-                                    cornerRadius={8}
-                                    listening={false}
-                                />
-
-                                {/* Baby blanket image - scaled based on actual dimensions */}
-                                {blanketImage && (
-                                    <KonvaImage
-                                        image={blanketImage}
-                                        x={blanketX}
-                                        y={blanketY}
-                                        width={displayWidth}
-                                        height={displayHeight}
-                                        listening={false}
-                                    />
-                                )}
-
-                                {/* Visual indicator of draggable canvas area (interior of blanket) */}
-                                
-
-                                {/* Motifs */}
-                                <Group>
-                                    {placedMotifs.map((motif) => (
-                                        <DraggableMotif
-                                            key={motif.id}
-                                            motif={motif}
-                                            // Pass all other motifs for collision detection
-                                            otherMotifs={placedMotifs.filter(m => m.id !== motif.id)}
-                                            isSelected={motif.id === selectedId}
-                                            onSelect={() => selectMotif(motif.id)}
-                                            onChange={updateMotif}
-                                            onDuplicate={duplicateMotif}
-                                            onDelete={deleteMotif}
-                                            sweaterBounds={blanketBounds}
-                                            canAddMore={motifCount < maxMotifs}
-                                        />
-                                    ))}
-                                </Group>
-                            </Layer>
-                        </Stage>
-                    ) : (
-                        /* Sweater View - Original code */
-                        <>
-                            <SweaterIcon className="sweater-base" />
-
-                            <Stage
-                                width={stageDimensions.width}
-                                height={stageDimensions.height}
-                                onMouseDown={checkDeselect}
-                                onTouchStart={checkDeselect}
-                                className="motif-stage"
-                            >
-                                <Layer>
-                                    <Group>
-                                        {/* Maps motifs */}
-                                        <Group>
-                                            {placedMotifs.map((motif) => (
-                                                <DraggableMotif
-                                                    key={motif.id}
-                                                    motif={motif}
-                                                    otherMotifs={placedMotifs.filter(m => m.id !== motif.id)}
-                                                    isSelected={motif.id === selectedId}
-                                                    onSelect={() => selectMotif(motif.id)}
-                                                    onChange={updateMotif}
-                                                    onDuplicate={duplicateMotif}
-                                                    onDelete={deleteMotif}
-                                                    sweaterBounds={{ ...designBounds, left: 0, top: 0, right: 400, bottom: 400 }}
-                                                    canAddMore={motifCount < maxMotifs}
-                                                />
-                                            ))}
-                                        </Group>
-                                    </Group>
-                                </Layer>
-                            </Stage>
-                        </>
-                    )}
+                    <PatternCanvas
+                        isBabyBlanket={patternConfig.isBabyBlanket}
+                        motifs={placedMotifs}
+                        selectedId={selectedId}
+                        onSelectMotif={selectMotif}
+                        onMotifChange={updateMotif}
+                        onMotifDuplicate={duplicateMotif}
+                        onMotifDelete={deleteMotif}
+                        designBounds={designBounds}
+                        stageDimensions={stageDimensions}
+                        canAddMore={motifCount < maxMotifs}
+                        blanketDisplay={blanketDisplay}
+                    />
                 </div>
                 <div className="motif-size">
                     <label>Motif size</label>
