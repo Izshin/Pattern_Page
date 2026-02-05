@@ -33,7 +33,40 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
         }
     }, [isBabyBlanket]);
 
-    // Motif Logic
+    // Calculate blanket dimensions and bounds BEFORE useMotifLogic
+    const containerWidth = 400;
+    const containerHeight = 500;
+    const padding = 20;
+    const maxBlanketSize = 140; // cm
+
+    const actualWidth = blanketDimensions.width;
+    const actualHeight = blanketDimensions.height;
+
+    const availableWidth = containerWidth - (padding * 2);
+    const availableHeight = containerHeight - (padding * 2);
+
+    const scaleX = availableWidth / maxBlanketSize;
+    const scaleY = availableHeight / maxBlanketSize;
+    const scale = Math.min(scaleX, scaleY);
+
+    const displayWidth = actualWidth * scale;
+    const displayHeight = actualHeight * scale;
+
+    const blanketX = padding + (availableWidth - displayWidth) / 2;
+    const blanketY = padding + (availableHeight - displayHeight) / 2;
+
+    const ribbonPaddingPercent = 0.08;
+    const ribbonPaddingX = displayWidth * ribbonPaddingPercent;
+    const ribbonPaddingY = displayHeight * ribbonPaddingPercent;
+
+    const blanketBounds = {
+        left: blanketX + ribbonPaddingX,
+        top: blanketY + ribbonPaddingY,
+        right: blanketX + displayWidth - ribbonPaddingX,
+        bottom: blanketY + displayHeight - ribbonPaddingY
+    };
+
+    // Motif Logic - pass blanketBounds for baby blanket mode
     const {
         placedMotifs,
         selectedId,
@@ -46,7 +79,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
         stageDimensions,
         motifCount,
         maxMotifs
-    } = useMotifLogic();
+    } = useMotifLogic(isBabyBlanket ? blanketBounds : undefined);
 
     // Auto-add a demo motif on mount for "Inspiration"
     useEffect(() => {
@@ -82,52 +115,6 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
             window.removeEventListener('mousedown', handleGlobalClick);
         };
     }, [selectMotif]);
-
-    // Calculate blanket container dimensions - container stays same size
-    const containerWidth = 400;
-    const containerHeight = 500;
-    const padding = 20;
-
-    // Max blanket size that fills the container
-    const maxBlanketSize = 140; // cm
-
-    // Calculate scale factor based on aspect ratio
-    // The blanket should scale proportionally based on its actual cm dimensions
-    const actualWidth = blanketDimensions.width;
-    const actualHeight = blanketDimensions.height;
-
-    // Available space in container
-    const availableWidth = containerWidth - (padding * 2);
-    const availableHeight = containerHeight - (padding * 2);
-
-    // Calculate scale: max size (140cm) should fill available space
-    const scaleX = availableWidth / maxBlanketSize;
-    const scaleY = availableHeight / maxBlanketSize;
-
-    // Use the smaller scale to maintain aspect ratio
-    const scale = Math.min(scaleX, scaleY);
-
-    // Calculate actual blanket display dimensions
-    const displayWidth = actualWidth * scale;
-    const displayHeight = actualHeight * scale;
-
-    // Center the blanket in the container
-    const blanketX = padding + (availableWidth - displayWidth) / 2;
-    const blanketY = padding + (availableHeight - displayHeight) / 2;
-
-    // Ribbon padding as percentage of blanket size for proper scaling
-    // The visual ribbon in the blanket image is approximately 8-10% of the blanket size
-    const ribbonPaddingPercent = 0.08; // 8% of blanket dimensions
-    const ribbonPaddingX = displayWidth * ribbonPaddingPercent;
-    const ribbonPaddingY = displayHeight * ribbonPaddingPercent;
-
-    // Draggable bounds for motifs - interior canvas of the blanket (inside the ribbon border)
-    const blanketBounds = {
-        left: blanketX + ribbonPaddingX,
-        top: blanketY + ribbonPaddingY,
-        right: blanketX + displayWidth - ribbonPaddingX,
-        bottom: blanketY + displayHeight - ribbonPaddingY
-    };
 
     return (
         <>

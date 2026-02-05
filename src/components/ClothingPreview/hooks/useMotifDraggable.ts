@@ -10,20 +10,20 @@ interface Bounds {
 
 export const useMotifDraggable = (
     nodeRef: React.RefObject<Konva.Group | null>,
-    bounds: Bounds
+    bounds: Bounds,
+    baseWidth: number,
+    baseHeight: number
 ) => {
     const handleDragMove = () => {
         const node = nodeRef.current;
         if (!node) return;
 
-        const width = node.width();
-        const height = node.height();
         const scaleX = node.scaleX();
         const scaleY = node.scaleY();
         
-        // Calculate the actual image size
-        const actualWidth = width * scaleX;
-        const actualHeight = height * scaleY;
+        // Calculate the actual image size using base dimensions
+        const actualWidth = baseWidth * scaleX;
+        const actualHeight = baseHeight * scaleY;
 
         // Get current position
         let newX = node.x();

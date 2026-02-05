@@ -47,7 +47,7 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     const [isHovered, setIsHovered] = useState(false);
 
     // Hooks
-    const { handleDragMove } = useMotifDraggable(groupRef, sweaterBounds);
+    const { handleDragMove } = useMotifDraggable(groupRef, sweaterBounds, motif.width, motif.height);
 
     // Initial force update to ensure CSS variables are loaded
     const [, forceUpdate] = useState({});
@@ -79,11 +79,29 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     // Change Handlers
     const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
         const node = e.target;
-        const newX = node.x();
-        const newY = node.y();
+        let newX = node.x();
+        let newY = node.y();
         const rotation = node.rotation();
         const scaleX = node.scaleX();
         const scaleY = node.scaleY();
+
+        // Calculate actual dimensions with scale
+        const actualWidth = motif.width * scaleX;
+        const actualHeight = motif.height * scaleY;
+
+        // Enforce bounds - ensure motif stays within the blanket canvas
+        if (newX < sweaterBounds.left) {
+            newX = sweaterBounds.left;
+        }
+        if (newX + actualWidth > sweaterBounds.right) {
+            newX = sweaterBounds.right - actualWidth;
+        }
+        if (newY < sweaterBounds.top) {
+            newY = sweaterBounds.top;
+        }
+        if (newY + actualHeight > sweaterBounds.bottom) {
+            newY = sweaterBounds.bottom - actualHeight;
+        }
 
         // Check for collision with other motifs
         // Apply padding to make the hit box smaller than the visual image
