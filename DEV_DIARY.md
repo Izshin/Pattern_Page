@@ -45,6 +45,31 @@ This update adds complete baby blanket pattern functionality with dynamic calcul
 - **Type Definitions** (`pattern.ts`): TypeScript interfaces for pattern data structures
 - **State Management**: Added `blanketDimensions` and `accordionSections` states with automatic updates from backend
 
+#### Draggable Motif System
+
+- **Dynamic Bounds System**: 
+  - Blanket bounds calculated as percentage-based padding (7% horizontal, 6% vertical) to account for ribbon border
+  - Real-time bounds enforcement during drag, transform, and placement operations
+  - Visual indicator (blue dashed lines) showing exact draggable canvas area
+
+- **Collision Detection**:
+  - Separating Axis Theorem (SAT) implementation for rotated rectangle intersection
+  - 25px collision padding between motifs for visual spacing
+  - Automatic position adjustment to nearest valid location on collision
+  - Spiral search algorithm for optimal placement
+
+- **Bounds Enforcement**:
+  - Fixed dimension tracking using base width/height instead of group bounds
+  - Separate collision padding (motif-to-motif) and bounds padding (motif-to-edge)
+  - Proper handling of scaled and rotated motifs within blanket interior
+  - Real-time constraint checking in `useMotifDraggable` hook
+
+- **Motif Management**:
+  - Maximum 4 motifs per blanket
+  - Duplicate/delete functionality with keyboard shortcuts (Delete/Backspace)
+  - Selection state management with global click handlers
+  - Counter-rotated action buttons maintaining upright orientation
+
 #### Statistics
 
 **Files Modified**: 15 files | **Lines Changed**: +909 / -102
@@ -65,3 +90,8 @@ This update adds complete baby blanket pattern functionality with dynamic calcul
 - `src/components/InfoSection/InfoSection.tsx`
 - `src/types/pattern.ts` (new)
 - `src/utils/api.ts` (new)
+- `src/components/ClothingPreview/hooks/useMotifDraggable.ts` (modified)
+- `src/components/ClothingPreview/hooks/useMotifLogic.ts` (modified)
+- `src/components/ClothingPreview/Motif/DraggableMotif.tsx` (modified)
+- `src/utils/placement.ts` (modified)
+- `src/utils/geometry.ts` (new)
