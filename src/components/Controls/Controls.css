@@ -141,7 +141,7 @@
 
 .slider-track-fill {
     position: absolute;
-    top: 27%;
+    margin-top: -0.9rem;
     height: 6px;
     background: var(--color-primary);
     border-radius: 3px;

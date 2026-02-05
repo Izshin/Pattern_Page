@@ -8,7 +8,14 @@ interface ControlsProps {
     setTensionMax: (val: number) => void;
     chestSize: number;
     setChestSize: (val: number) => void;
+    sizeMin: number;
+    setSizeMin: (val: number) => void;
+    sizeMax: number;
+    setSizeMax: (val: number) => void;
     onOpenInfo: (type: 'tension' | 'chest') => void;
+    tensionRange?: { min: number; max: number };
+    sizeRange?: { min: number; max: number; step?: number };
+    isBabyBlanket?: boolean;
 }
 
 const Controls: React.FC<ControlsProps> = ({
@@ -18,10 +25,19 @@ const Controls: React.FC<ControlsProps> = ({
     setTensionMax,
     chestSize,
     setChestSize,
-    onOpenInfo
+    sizeMin,
+    setSizeMin,
+    sizeMax,
+    setSizeMax,
+    onOpenInfo,
+    tensionRange = { min: 17, max: 23 },
+    sizeRange = { min: 0, max: 5, step: 1 },
+    isBabyBlanket = false
 }) => {
     const sizes = ['Woman XXS', 'Woman XS', 'Woman S', 'Woman M', 'Woman L', 'Woman XL'];
-    const tensionValues = [17, 18, 19, 20, 21, 22, 23];
+    const sizeLabel = isBabyBlanket ? 'Size' : 'Chest / Bust';
+    const sizeValue = isBabyBlanket ? `${sizeMin} × ${sizeMax}` : sizes[chestSize];
+    const sizeStep = sizeRange.step || 1;
 
     return (
         <>
@@ -43,31 +59,19 @@ const Controls: React.FC<ControlsProps> = ({
                         <div
                             className="slider-track-fill"
                             style={{
-                                left: `calc(29px + (100% - 58px) * (${tensionValues.indexOf(tensionMin)} / 6))`,
-                                width: `calc((100% - 58px) * ((${tensionValues.indexOf(tensionMax)} - ${tensionValues.indexOf(tensionMin)}) / 6))`
+                                left: `calc(29px + (100% - 58px) * ((${tensionMin} - ${tensionRange.min}) / ${tensionRange.max - tensionRange.min}))`,
+                                width: `calc((100% - 58px) * ((${tensionMax} - ${tensionMin}) / ${tensionRange.max - tensionRange.min}))`
                             }}
                         />
-                        {tensionValues.map((_, i) => {
-                            const currentMinIndex = tensionValues.indexOf(tensionMin);
-                            const currentMaxIndex = tensionValues.indexOf(tensionMax);
-                            const isActive = i >= currentMinIndex && i <= currentMaxIndex;
-                            return (
-                                <div
-                                    key={i}
-                                    className={`slider-dot ${isActive ? 'active' : ''}`}
-                                    style={{ opacity: i < 1 || i > 5 ? 0 : 1 }}
-                                />
-                            );
-                        })}
                     </div>
                     <input
                         type="range"
-                        min="0"
-                        max="6"
+                        min={tensionRange.min}
+                        max={tensionRange.max}
                         step="1"
-                        value={tensionValues.indexOf(tensionMin)}
+                        value={tensionMin}
                         onChange={(e) => {
-                            const newMin = tensionValues[parseInt(e.target.value)];
+                            const newMin = parseInt(e.target.value);
                             if (newMin <= tensionMax) {
                                 setTensionMin(newMin);
                             }
@@ -76,12 +80,12 @@ const Controls: React.FC<ControlsProps> = ({
                     />
                     <input
                         type="range"
-                        min="0"
-                        max="6"
+                        min={tensionRange.min}
+                        max={tensionRange.max}
                         step="1"
-                        value={tensionValues.indexOf(tensionMax)}
+                        value={tensionMax}
                         onChange={(e) => {
-                            const newMax = tensionValues[parseInt(e.target.value)];
+                            const newMax = parseInt(e.target.value);
                             if (newMax >= tensionMin) {
                                 setTensionMax(newMax);
                             }
@@ -94,43 +98,98 @@ const Controls: React.FC<ControlsProps> = ({
             <div className="control-group">
                 <div className="control-header">
                     <label>
-                        Chest / Bust
+                        {sizeLabel}
                         <button
                             className="info-button"
-                            title="Information about chest/bust sizing"
+                            title={`Information about ${sizeLabel.toLowerCase()}`}
                             onClick={() => onOpenInfo('chest')}
                         >?</button>
                     </label>
-                    <div className="value-display">{sizes[chestSize]}</div>
+                    <div className="value-display">{sizeValue}</div>
                 </div>
-                <div className="single-slider-container">
-                    <div className="slider-track-visuals">
-                        {/* The filled line from start to current value */}
-                        <div
-                            className="slider-track-fill"
-                            style={{
-                                left: '14px',
-                                width: `calc((100% - 58px) * (${chestSize} / 5))`
-                            }}
-                        />
-                        {sizes.map((_, i) => (
+                {isBabyBlanket ? (
+                    <div className="dual-slider-container">
+                        <div className="slider-track-visuals">
+                            {/* The filled line between min and max */}
                             <div
-                                key={i}
-                                className={`slider-dot ${i <= chestSize ? 'active' : ''}`}
-                                style={{ opacity: i < 1 ? 0 : 1 }}
+                                className="slider-track-fill"
+                                style={{
+                                    left: `calc(29px + (100% - 58px) * ((${sizeMin} - ${sizeRange.min}) / ${sizeRange.max - sizeRange.min}))`,
+                                    width: `calc((100% - 58px) * ((${sizeMax} - ${sizeMin}) / ${sizeRange.max - sizeRange.min}))`
+                                }}
                             />
-                        ))}
+                            {/* Dots for size range */}
+                            {Array.from({ length: Math.floor((sizeRange.max - sizeRange.min) / sizeStep) + 1 }, (_, i) => {
+                                const dotValue = sizeRange.min + (i * sizeStep);
+                                const isActive = dotValue >= sizeMin && dotValue <= sizeMax;
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`slider-dot ${isActive ? 'active' : ''}`}
+                                        style={{ opacity: i < 1 || i > Math.floor((sizeRange.max - sizeRange.min) / sizeStep) - 1 ? 0 : 1 }}
+                                    />
+                                );
+                            })}
+                        </div>
+                        <input
+                            type="range"
+                            min={sizeRange.min}
+                            max={sizeRange.max}
+                            step={sizeStep}
+                            value={sizeMin}
+                            onChange={(e) => {
+                                const newMin = parseInt(e.target.value);
+                                if (newMin <= sizeMax) {
+                                    setSizeMin(newMin);
+                                }
+                            }}
+                            className="slider slider-min"
+                        />
+                        <input
+                            type="range"
+                            min={sizeRange.min}
+                            max={sizeRange.max}
+                            step={sizeStep}
+                            value={sizeMax}
+                            onChange={(e) => {
+                                const newMax = parseInt(e.target.value);
+                                if (newMax >= sizeMin) {
+                                    setSizeMax(newMax);
+                                }
+                            }}
+                            className="slider slider-max"
+                        />
                     </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="5"
-                        step="1"
-                        value={chestSize}
-                        onChange={(e) => setChestSize(parseInt(e.target.value))}
-                        className="slider"
-                    />
-                </div>
+                ) : (
+                    <div className="single-slider-container">
+                        <div className="slider-track-visuals">
+                            {/* The filled line from start to current value */}
+                            <div
+                                className="slider-track-fill"
+                                style={{
+                                    left: '14px',
+                                    width: `calc((100% - 58px) * (${chestSize} / 5))`
+                                }}
+                            />
+                            {sizes.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`slider-dot ${i <= chestSize ? 'active' : ''}`}
+                                    style={{ opacity: i < 1 ? 0 : 1 }}
+                                />
+                            ))}
+                        </div>
+                        <input
+                            type="range"
+                            min={sizeRange.min}
+                            max={sizeRange.max}
+                            step={sizeStep}
+                            value={chestSize}
+                            onChange={(e) => setChestSize(parseInt(e.target.value))}
+                            className="slider"
+                        />
+                    </div>
+                )}
             </div>
         </>
     );

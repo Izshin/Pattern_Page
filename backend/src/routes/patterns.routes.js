@@ -10,6 +10,23 @@ const PATTERNS_DIR = path.resolve(process.cwd(), "patterns");
 // Optional: allow only certain extensions
 const ALLOWED_EXT = new Set([".pat"]);
 
+// GET /patterns - List all available patterns
+router.get("/", async (req, res) => {
+  try {
+    const files = await fs.readdir(PATTERNS_DIR);
+    const patternFiles = files.filter(file => 
+      ALLOWED_EXT.has(path.extname(file).toLowerCase())
+    );
+    
+    return res.json({
+      patterns: patternFiles
+    });
+  } catch (err) {
+    console.error("patterns list error:", err);
+    return res.status(500).json({ error: "server error" });
+  }
+});
+
 router.get("/:filename", async (req, res) => {
   try {
     const rawName = req.params.filename;
@@ -38,10 +55,19 @@ router.get("/:filename", async (req, res) => {
 
     const content = await fs.readFile(resolved, "utf8");
 
+    // Try to parse as JSON
+    let parsedData;
+    try {
+      parsedData = JSON.parse(content);
+    } catch {
+      // If not JSON, return raw content
+      parsedData = { content };
+    }
+
     // Return as JSON (easy for frontend)
     return res.json({
       filename: safeName,
-      content,
+      ...parsedData
     });
   } catch (err) {
     // File not found

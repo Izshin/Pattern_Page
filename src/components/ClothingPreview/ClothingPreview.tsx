@@ -1,15 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Group, Path } from 'react-konva';
+import { Stage, Layer, Group, Image as KonvaImage, Rect } from 'react-konva';
 import './ClothingPreview.css';
 import SweaterIcon from '../../assets/Logos/SweaterIcon.svg?react';
 import { useMotifLogic } from './hooks/useMotifLogic';
 import DraggableMotif from './Motif/DraggableMotif';
+import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png';
 
-const ClothingPreview = () => {
+interface ClothingPreviewProps {
+    blanketDimensions?: { width: number; height: number };
+}
+
+const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = { width: 60, height: 80 } }) => {
     const [isClothingDropdownOpen, setIsClothingDropdownOpen] = useState(false);
+    const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
+    
+    // Get current pattern from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPattern = urlParams.get('pattern') || 'BabyBlanket';
+    const isBabyBlanket = currentPattern === 'BabyBlanket';
 
     // Strict mode duplicate prevention
     const initialized = useRef(false);
+
+    // Load baby blanket image
+    useEffect(() => {
+        if (isBabyBlanket) {
+            const img = new window.Image();
+            img.src = BabyBlanketImage;
+            img.onload = () => {
+                setBlanketImage(img);
+            };
+        }
+    }, [isBabyBlanket]);
 
     // Motif Logic
     const {
@@ -59,6 +81,46 @@ const ClothingPreview = () => {
         };
     }, [selectMotif]);
 
+    // Calculate blanket container dimensions - container stays same size
+    const containerWidth = 400;
+    const containerHeight = 500;
+    const padding = 20;
+    
+    // Max blanket size that fills the container
+    const maxBlanketSize = 140; // cm
+    
+    // Calculate scale factor based on aspect ratio
+    // The blanket should scale proportionally based on its actual cm dimensions
+    const actualWidth = blanketDimensions.width;
+    const actualHeight = blanketDimensions.height;
+    
+    // Available space in container
+    const availableWidth = containerWidth - (padding * 2);
+    const availableHeight = containerHeight - (padding * 2);
+    
+    // Calculate scale: max size (140cm) should fill available space
+    const scaleX = availableWidth / maxBlanketSize;
+    const scaleY = availableHeight / maxBlanketSize;
+    
+    // Use the smaller scale to maintain aspect ratio
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Calculate actual blanket display dimensions
+    const displayWidth = actualWidth * scale;
+    const displayHeight = actualHeight * scale;
+    
+    // Center the blanket in the container
+    const blanketX = padding + (availableWidth - displayWidth) / 2;
+    const blanketY = padding + (availableHeight - displayHeight) / 2;
+    
+    // Simple rectangular bounds for baby blanket (for motif dragging)
+    const blanketBounds = {
+        left: blanketX,
+        top: blanketY,
+        right: blanketX + displayWidth,
+        bottom: blanketY + displayHeight
+    };
+
     return (
         <>
             <div className="clothing-dropdown">
@@ -82,35 +144,42 @@ const ClothingPreview = () => {
 
                 {isClothingDropdownOpen && (
                     <div className="dropdown-menu">
-                        <button className="dropdown-item">
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=BabyBlanket'}>
+                            <div className="dropdown-item-content">
+                                <img src="/src/assets/Patterns/BabybBlanketPatternImage.png" alt="Baby Blankets" />
+                                <span>Baby Blankets</span>
+                            </div>
+                            <span className="dropdown-item-arrow">›</span>
+                        </button>
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Hat'}>
                             <div className="dropdown-item-content">
                                 <SweaterIcon />
                                 <span>Hats</span>
                             </div>
                             <span className="dropdown-item-arrow">›</span>
                         </button>
-                        <button className="dropdown-item">
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Scarf'}>
                             <div className="dropdown-item-content">
                                 <img src="/IconsImages/ScarfIcon.png" alt="Scarfs" />
                                 <span>Scarfs</span>
                             </div>
                             <span className="dropdown-item-arrow">›</span>
                         </button>
-                        <button className="dropdown-item">
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Sweater'}>
                             <div className="dropdown-item-content">
                                 <img src="/IconsImages/SweaterIcon.png" alt="Sweaters" />
                                 <span>Sweaters</span>
                             </div>
                             <span className="dropdown-item-arrow">›</span>
                         </button>
-                        <button className="dropdown-item">
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Mittens'}>
                             <div className="dropdown-item-content">
                                 <img src="/IconsImages/MittensIcon.png" alt="Mittens" />
                                 <span>Mittens</span>
                             </div>
                             <span className="dropdown-item-arrow">›</span>
                         </button>
-                        <button className="dropdown-item">
+                        <button className="dropdown-item" onClick={() => window.location.href = '?pattern=Bag'}>
                             <div className="dropdown-item-content">
                                 <img src="/IconsImages/BagIcon.png" alt="Bags" />
                                 <span>Bags</span>
@@ -123,19 +192,54 @@ const ClothingPreview = () => {
 
             <div className={`sweater-preview ${isClothingDropdownOpen ? 'dropdown-open' : ''}`}>
                 <div className="sweater-container">
-                    <SweaterIcon className="sweater-base" />
-
-                    {/* Konva Stage Layer for Motifs */}
-                    <Stage
-                        width={stageDimensions.width}
-                        height={stageDimensions.height}
-                        onMouseDown={checkDeselect}
-                        onTouchStart={checkDeselect}
-                        className="motif-stage"
-                    >
-                        <Layer>
-                            <Group>
-                                {/* Maps motifs */}
+                    {isBabyBlanket ? (
+                        /* Baby Blanket View */
+                        <Stage
+                            width={containerWidth}
+                            height={containerHeight}
+                            onMouseDown={checkDeselect}
+                            onTouchStart={checkDeselect}
+                            className="motif-stage blanket-stage"
+                        >
+                            <Layer>
+                                {/* Container background */}
+                                <Rect
+                                    x={0}
+                                    y={0}
+                                    width={containerWidth}
+                                    height={containerHeight}
+                                    fill="#f5f5f5"
+                                    stroke="#ccc"
+                                    strokeWidth={2}
+                                    cornerRadius={8}
+                                    listening={false}
+                                />
+                                
+                                {/* Baby blanket image - scaled based on actual dimensions */}
+                                {blanketImage && (
+                                    <KonvaImage
+                                        image={blanketImage}
+                                        x={blanketX}
+                                        y={blanketY}
+                                        width={displayWidth}
+                                        height={displayHeight}
+                                        listening={false}
+                                    />
+                                )}
+                                
+                                {/* Draggable area border */}
+                                <Rect
+                                    x={blanketX}
+                                    y={blanketY}
+                                    width={displayWidth}
+                                    height={displayHeight}
+                                    stroke="#666"
+                                    strokeWidth={1}
+                                    dash={[5, 5]}
+                                    listening={false}
+                                />
+                                
+                                {/* Motifs */}
                                 <Group>
                                     {placedMotifs.map((motif) => (
                                         <DraggableMotif
@@ -146,24 +250,46 @@ const ClothingPreview = () => {
                                             onChange={updateMotif}
                                             onDuplicate={duplicateMotif}
                                             onDelete={deleteMotif}
-                                            // Allow moving anywhere, visual clip handles the rest
-                                            sweaterBounds={{ ...designBounds, left: 0, top: 0, right: 400, bottom: 400 }}
+                                            sweaterBounds={blanketBounds}
                                         />
                                     ))}
                                 </Group>
+                            </Layer>
+                        </Stage>
+                    ) : (
+                        /* Sweater View - Original code */
+                        <>
+                            <SweaterIcon className="sweater-base" />
 
-                                {/* Mask Layer using GCO. This shape keeps content overlapping it. */}
-                                <Path
-                                    data="M445.084,62.175L314.555,27.688C304.165,49.59,281.854,64.74,256,64.74 c-25.854,0-48.163-15.149-58.555-37.052L66.917,62.175L10.45,434.507l56.467,17.371l50.809-234.014v266.448h276.548V217.865 l50.809,234.014l56.467-17.371L445.084,62.175z"
-                                    fill="black" // needed for alpha mask
-                                    scaleX={400 / 512}
-                                    scaleY={400 / 512}
-                                    globalCompositeOperation="destination-in"
-                                    listening={false} // pass through events
-                                />
-                            </Group>
-                        </Layer>
-                    </Stage>
+                            <Stage
+                                width={stageDimensions.width}
+                                height={stageDimensions.height}
+                                onMouseDown={checkDeselect}
+                                onTouchStart={checkDeselect}
+                                className="motif-stage"
+                            >
+                                <Layer>
+                                    <Group>
+                                        {/* Maps motifs */}
+                                        <Group>
+                                            {placedMotifs.map((motif) => (
+                                                <DraggableMotif
+                                                    key={motif.id}
+                                                    motif={motif}
+                                                    isSelected={motif.id === selectedId}
+                                                    onSelect={() => selectMotif(motif.id)}
+                                                    onChange={updateMotif}
+                                                    onDuplicate={duplicateMotif}
+                                                    onDelete={deleteMotif}
+                                                    sweaterBounds={{ ...designBounds, left: 0, top: 0, right: 400, bottom: 400 }}
+                                                />
+                                            ))}
+                                        </Group>
+                                    </Group>
+                                </Layer>
+                            </Stage>
+                        </>
+                    )}
                 </div>
                 <div className="motif-size">
                     <label>Motif size</label>

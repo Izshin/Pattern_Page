@@ -7,8 +7,13 @@ import InfoIcon from '../../assets/Logos/InfoIcon.svg?react';
 import AccordionItem from './AccordionItem';
 import KnittingChart from './KnittingChart';
 
-// Data definition
-// In a real app, this might come from props or a context
+interface InfoSectionProps {
+    showFloatingButtons: boolean;
+    accordionSections?: any[];
+    isBabyBlanket?: boolean;
+}
+
+// Default data for sweater (fallback)
 const ACCORDION_DATA = [
     {
         id: 0,
@@ -122,7 +127,7 @@ const ACCORDION_DATA = [
     }
 ];
 
-const InfoSection = forwardRef<HTMLDivElement, { showFloatingButtons: boolean }>(({ showFloatingButtons }, ref) => {
+const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloatingButtons, accordionSections, isBabyBlanket }, ref) => {
     const [openAccordions, setOpenAccordions] = useState<Set<number>>(new Set());
 
     const toggleAccordion = (index: number) => {
@@ -141,10 +146,27 @@ const InfoSection = forwardRef<HTMLDivElement, { showFloatingButtons: boolean }>
         setOpenAccordions(newOpenAccordions);
     };
 
+    // Use dynamic accordion sections for baby blanket, fallback to default for sweater
+    const baseAccordionData = isBabyBlanket && accordionSections && accordionSections.length > 0
+        ? accordionSections.map(section => ({
+            ...section,
+            content: (
+                <>
+                    <h3>{section.title}</h3>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                        {section.content.split('\n\n').map((paragraph: string, idx: number) => (
+                            <p key={idx}>{paragraph}</p>
+                        ))}
+                    </div>
+                </>
+            )
+          }))
+        : ACCORDION_DATA;
+
     const accordionData = [
-        ...ACCORDION_DATA,
+        ...baseAccordionData,
         {
-            id: 5,
+            id: baseAccordionData.length,
             title: 'Chart',
             content: <KnittingChart />
         }
