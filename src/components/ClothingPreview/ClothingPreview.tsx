@@ -54,16 +54,12 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
 
     const blanketX = padding + (availableWidth - displayWidth) / 2;
     const blanketY = padding + (availableHeight - displayHeight) / 2;
-
-    const ribbonPaddingPercent = 0.08;
-    const ribbonPaddingX = displayWidth * ribbonPaddingPercent;
-    const ribbonPaddingY = displayHeight * ribbonPaddingPercent;
-
+   
     const blanketBounds = {
-        left: blanketX + ribbonPaddingX,
-        top: blanketY + ribbonPaddingY,
-        right: blanketX + displayWidth - ribbonPaddingX,
-        bottom: blanketY + displayHeight - ribbonPaddingY
+        left: blanketX ,
+        top: blanketY ,
+        right: blanketX + displayWidth ,
+        bottom: blanketY + displayHeight 
     };
 
     // Motif Logic - pass blanketBounds for baby blanket mode
@@ -223,17 +219,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
                                 )}
 
                                 {/* Visual indicator of draggable canvas area (interior of blanket) */}
-                                <Rect
-                                    x={blanketBounds.left}
-                                    y={blanketBounds.top}
-                                    width={blanketBounds.right - blanketBounds.left}
-                                    height={blanketBounds.bottom - blanketBounds.top}
-                                    stroke="#4A90E2"
-                                    strokeWidth={2}
-                                    dash={[8, 4]}
-                                    listening={false}
-                                    opacity={0.6}
-                                />
+                                
 
                                 {/* Motifs */}
                                 <Group>

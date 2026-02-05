@@ -75,8 +75,16 @@ export const findClosestValidPosition = (
         });
     };
 
+    // Helper to check if position is within bounds (WITHOUT padding - use exact bounds)
+    const isWithinBounds = (checkX: number, checkY: number) => {
+        return checkX >= bounds.left &&
+            checkY >= bounds.top &&
+            (checkX + width * scaleX) <= bounds.right &&
+            (checkY + height * scaleY) <= bounds.bottom;
+    };
+
     // Check start position first
-    if (!checkCollision(x, y)) {
+    if (isWithinBounds(x, y) && !checkCollision(x, y)) {
         return { x, y };
     }
 
@@ -90,19 +98,7 @@ export const findClosestValidPosition = (
             case 3: y -= stepSize; break; // Up
         }
 
-        // Clamp to bounds (optional: if we want to ensure it stays inside)
-        // If clamped value is different, we might be hitting a wall, so just continue
-        // But for "closest valid", we check if the new pos is valid
-        // Ideally we respect bounds, but if the only valid spot is SLIGHTLY out, maybe allow?
-        // Let's enforce strict bounds for now.
-
-        const isWithinBounds =
-            x >= bounds.left &&
-            y >= bounds.top &&
-            (x + width * scaleX) <= bounds.right &&
-            (y + height * scaleY) <= bounds.bottom;
-
-        if (isWithinBounds && !checkCollision(x, y)) {
+        if (isWithinBounds(x, y) && !checkCollision(x, y)) {
             return { x, y };
         }
 

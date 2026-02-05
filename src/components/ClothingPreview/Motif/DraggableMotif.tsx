@@ -157,6 +157,10 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
             return;
         }
 
+        // Update node position to bounded coordinates
+        node.x(newX);
+        node.y(newY);
+
         onChange({
             ...motif,
             x: newX,
@@ -169,13 +173,41 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
 
     const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
         const node = e.target;
+        let newX = node.x();
+        let newY = node.y();
+        const rotation = node.rotation();
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+
+        // Calculate actual dimensions with scale
+        const actualWidth = motif.width * scaleX;
+        const actualHeight = motif.height * scaleY;
+
+        // Enforce bounds after transform
+        if (newX < sweaterBounds.left) {
+            newX = sweaterBounds.left;
+        }
+        if (newX + actualWidth > sweaterBounds.right) {
+            newX = sweaterBounds.right - actualWidth;
+        }
+        if (newY < sweaterBounds.top) {
+            newY = sweaterBounds.top;
+        }
+        if (newY + actualHeight > sweaterBounds.bottom) {
+            newY = sweaterBounds.bottom - actualHeight;
+        }
+
+        // Update node position if adjusted
+        node.x(newX);
+        node.y(newY);
+
         onChange({
             ...motif,
-            x: node.x(),
-            y: node.y(),
-            rotation: node.rotation(),
-            scaleX: node.scaleX(),
-            scaleY: node.scaleY(),
+            x: newX,
+            y: newY,
+            rotation: rotation,
+            scaleX: scaleX,
+            scaleY: scaleY,
         });
     };
 
