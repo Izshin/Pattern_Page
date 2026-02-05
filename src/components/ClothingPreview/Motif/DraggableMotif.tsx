@@ -4,6 +4,8 @@ import Konva from 'konva';
 import { MotifActions } from './MotifActions';
 import { useMotifDraggable } from '../hooks/useMotifDraggable';
 import type { Motif } from '../types';
+import { checkRectIntersection } from '../../../utils/geometry';
+import { findClosestValidPosition } from '../../../utils/placement';
 
 
 interface DraggableMotifProps {
@@ -19,7 +21,11 @@ interface DraggableMotifProps {
         right: number;
         bottom: number;
     };
+    canAddMore?: boolean;
+    otherMotifs?: Motif[];
 }
+
+const COLLISION_PADDING = 25; // Increased spacing between motifs
 
 const DraggableMotif: React.FC<DraggableMotifProps> = ({
     motif,
@@ -29,6 +35,8 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     onDuplicate,
     onDelete,
     sweaterBounds,
+    canAddMore = true,
+    otherMotifs = [],
 }) => {
     const groupRef = useRef<Konva.Group>(null);
     const imageRef = useRef<Konva.Image>(null);
@@ -71,13 +79,73 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     // Change Handlers
     const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
         const node = e.target;
+        const newX = node.x();
+        const newY = node.y();
+        const rotation = node.rotation();
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+
+        // Check for collision with other motifs
+        // Apply padding to make the hit box smaller than the visual image
+        const currentRect = {
+            x: newX + COLLISION_PADDING,
+            y: newY + COLLISION_PADDING,
+            width: Math.max(1, motif.width * scaleX - (COLLISION_PADDING * 2)),
+            height: Math.max(1, motif.height * scaleY - (COLLISION_PADDING *2)),
+            rotation: rotation,
+        };
+
+        const hasCollision = otherMotifs.some(other => {
+            const oScaleX = other.scaleX || 1;
+            const oScaleY = other.scaleY || 1;
+
+            const otherRect = {
+                x: other.x + COLLISION_PADDING,
+                y: other.y + COLLISION_PADDING,
+                width: Math.max(1, other.width * oScaleX - (COLLISION_PADDING * 2)),
+                height: Math.max(1, other.height * oScaleY - (COLLISION_PADDING * 2)),
+                rotation: other.rotation || 0,
+            };
+            return checkRectIntersection(currentRect, otherRect);
+        });
+
+        if (hasCollision) {
+            // Find closest valid position instead of reverting
+            const { x: safeX, y: safeY } = findClosestValidPosition(
+                newX,
+                newY,
+                motif.width,
+                motif.height,
+                rotation,
+                scaleX,
+                scaleY,
+                otherMotifs,
+                sweaterBounds,
+                COLLISION_PADDING
+            );
+
+            // Update to safe position
+            node.x(safeX);
+            node.y(safeY);
+
+            onChange({
+                ...motif,
+                x: safeX,
+                y: safeY,
+                rotation: rotation,
+                scaleX: scaleX,
+                scaleY: scaleY,
+            });
+            return;
+        }
+
         onChange({
             ...motif,
-            x: node.x(),
-            y: node.y(),
-            rotation: node.rotation(),
-            scaleX: node.scaleX(),
-            scaleY: node.scaleY(),
+            x: newX,
+            y: newY,
+            rotation: rotation,
+            scaleX: scaleX,
+            scaleY: scaleY,
         });
     };
 
@@ -128,10 +196,11 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
                     parentRotation={motif.rotation || 0}
+                    canAddMore={canAddMore}
                 />
             </Group>
 
-            
+
         </React.Fragment>
     );
 };

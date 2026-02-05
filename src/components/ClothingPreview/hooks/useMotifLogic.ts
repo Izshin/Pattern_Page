@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { Motif } from '../types';
+import { findClosestValidPosition } from '../../../utils/placement';
 
 const STITCH_SIZE = 4; // Arbitrary connection to pixel size
 const STAGE_WIDTH = 400;
 const STAGE_HEIGHT = 400;
-
+const MAX_MOTIFS = 4;
+const COLLISION_PADDING = 25; // Increased spacing between motifs
 
 // Helper to calculate stitch count
 const calculateStitches = (width: number, height: number, stitchSize = STITCH_SIZE) => {
@@ -13,21 +15,34 @@ const calculateStitches = (width: number, height: number, stitchSize = STITCH_SI
     return { cols, rows };
 };
 
-export const useMotifLogic = () => {
+interface Bounds {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+export const useMotifLogic = (customBounds?: Bounds) => {
     const [placedMotifs, setPlacedMotifs] = useState<Motif[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    // Design bounds (approximate area of the sweater on the 400x400 canvas)
-    // You can tune this to match the visual sweater body more precisely
-    // For now, giving some padding so it doesn't go off the edge
-    const designBounds = {
+    // Default design bounds for sweater, or use custom bounds (e.g., for baby blanket)
+    const designBounds = customBounds || {
         left: 50,
         top: 50,
         right: 350,
         bottom: 350,
     };
 
+
+
+
     const addMotif = (imageUrl: string) => {
+        if (placedMotifs.length >= MAX_MOTIFS) {
+            console.warn(`Maximum of ${MAX_MOTIFS} motifs allowed`);
+            return;
+        }
+
         const img = new window.Image();
         img.crossOrigin = 'Anonymous';
         img.src = imageUrl;
@@ -39,13 +54,27 @@ export const useMotifLogic = () => {
             const centerX = (designBounds.left + designBounds.right) / 2;
             const centerY = (designBounds.top + designBounds.bottom) / 2;
 
+            // Find valid position starting from center
+            const { x: validX, y: validY } = findClosestValidPosition(
+                centerX - width / 2,
+                centerY - height / 2,
+                width,
+                height,
+                0, // rotation
+                1, // scaleX
+                1, // scaleY
+                placedMotifs,
+                designBounds,
+                COLLISION_PADDING
+            );
+
             const stitches = calculateStitches(width, height);
 
             const newMotif: Motif = {
                 id,
                 image: img,
-                x: centerX - width / 2,
-                y: centerY - height / 2,
+                x: validX,
+                y: validY,
                 width,
                 height,
                 stitches,
@@ -86,6 +115,11 @@ export const useMotifLogic = () => {
     };
 
     const duplicateMotif = (id: string) => {
+        if (placedMotifs.length >= MAX_MOTIFS) {
+            console.warn(`Maximum of ${MAX_MOTIFS} motifs allowed`);
+            return;
+        }
+
         const motifToClone = placedMotifs.find(m => m.id === id);
         if (!motifToClone) return;
 
@@ -93,12 +127,25 @@ export const useMotifLogic = () => {
         const offset = 20;
 
         // Check bounds for the new position
-        const newX = motifToClone.x + offset;
-        const newY = motifToClone.y + offset;
+        const startX = motifToClone.x + offset;
+        const startY = motifToClone.y + offset;
+
+        const { x: validX, y: validY } = findClosestValidPosition(
+            startX,
+            startY,
+            motifToClone.width,
+            motifToClone.height,
+            motifToClone.rotation || 0,
+            motifToClone.scaleX || 1,
+            motifToClone.scaleY || 1,
+            placedMotifs,
+            designBounds,
+            COLLISION_PADDING
+        );
 
         // Simple safety check to keep it somewhat in view (not robust boundary check but good enough for clone)
-        const safeX = newX > designBounds.right ? designBounds.left : newX;
-        const safeY = newY > designBounds.bottom ? designBounds.top : newY;
+        const safeX = validX > designBounds.right ? designBounds.left : validX;
+        const safeY = validY > designBounds.bottom ? designBounds.top : validY;
 
         const newMotif: Motif = {
             ...motifToClone,
@@ -125,6 +172,8 @@ export const useMotifLogic = () => {
         duplicateMotif,
         deleteMotif,
         designBounds,
-        stageDimensions: { width: STAGE_WIDTH, height: STAGE_HEIGHT }
+        stageDimensions: { width: STAGE_WIDTH, height: STAGE_HEIGHT },
+        motifCount: placedMotifs.length,
+        maxMotifs: MAX_MOTIFS
     };
 };

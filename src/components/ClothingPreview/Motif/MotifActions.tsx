@@ -11,6 +11,7 @@ interface MotifActionsProps {
     onDuplicate?: (id: string) => void;
     onDelete?: (id: string) => void;
     parentRotation: number;
+    canAddMore?: boolean;
 }
 
 export const MotifActions = React.forwardRef<Konva.Group, MotifActionsProps>(({
@@ -19,8 +20,7 @@ export const MotifActions = React.forwardRef<Konva.Group, MotifActionsProps>(({
     isSelected,
     onDuplicate,
     onDelete,
-    parentRotation,
-}, ref) => {
+    parentRotation,    canAddMore = true,}, ref) => {
     const [hoveredButton, setHoveredButton] = useState<'copy' | 'delete' | null>(null);
     // Use the forwarded ref or create a fallback (though in this case we expect a ref)
     const internalRef = useRef<Konva.Group>(null);
@@ -51,7 +51,7 @@ export const MotifActions = React.forwardRef<Konva.Group, MotifActionsProps>(({
             rotation={-parentRotation}
         >
             {/* Copy Button */}
-            {onDuplicate && (
+            {onDuplicate && canAddMore && (
                 <Group
                     x={-24} // Relative to top-right corner
                     y={-14}

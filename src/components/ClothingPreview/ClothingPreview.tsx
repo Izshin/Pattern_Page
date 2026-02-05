@@ -13,7 +13,7 @@ interface ClothingPreviewProps {
 const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = { width: 60, height: 80 } }) => {
     const [isClothingDropdownOpen, setIsClothingDropdownOpen] = useState(false);
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
-    
+
     // Get current pattern from URL
     const urlParams = new URLSearchParams(window.location.search);
     const currentPattern = urlParams.get('pattern') || 'BabyBlanket';
@@ -43,7 +43,9 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
         duplicateMotif,
         deleteMotif,
         designBounds,
-        stageDimensions
+        stageDimensions,
+        motifCount,
+        maxMotifs
     } = useMotifLogic();
 
     // Auto-add a demo motif on mount for "Inspiration"
@@ -85,40 +87,46 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
     const containerWidth = 400;
     const containerHeight = 500;
     const padding = 20;
-    
+
     // Max blanket size that fills the container
     const maxBlanketSize = 140; // cm
-    
+
     // Calculate scale factor based on aspect ratio
     // The blanket should scale proportionally based on its actual cm dimensions
     const actualWidth = blanketDimensions.width;
     const actualHeight = blanketDimensions.height;
-    
+
     // Available space in container
     const availableWidth = containerWidth - (padding * 2);
     const availableHeight = containerHeight - (padding * 2);
-    
+
     // Calculate scale: max size (140cm) should fill available space
     const scaleX = availableWidth / maxBlanketSize;
     const scaleY = availableHeight / maxBlanketSize;
-    
+
     // Use the smaller scale to maintain aspect ratio
     const scale = Math.min(scaleX, scaleY);
-    
+
     // Calculate actual blanket display dimensions
     const displayWidth = actualWidth * scale;
     const displayHeight = actualHeight * scale;
-    
+
     // Center the blanket in the container
     const blanketX = padding + (availableWidth - displayWidth) / 2;
     const blanketY = padding + (availableHeight - displayHeight) / 2;
-    
-    // Simple rectangular bounds for baby blanket (for motif dragging)
+
+    // Ribbon padding as percentage of blanket size for proper scaling
+    // The visual ribbon in the blanket image is approximately 8-10% of the blanket size
+    const ribbonPaddingPercent = 0.08; // 8% of blanket dimensions
+    const ribbonPaddingX = displayWidth * ribbonPaddingPercent;
+    const ribbonPaddingY = displayHeight * ribbonPaddingPercent;
+
+    // Draggable bounds for motifs - interior canvas of the blanket (inside the ribbon border)
     const blanketBounds = {
-        left: blanketX,
-        top: blanketY,
-        right: blanketX + displayWidth,
-        bottom: blanketY + displayHeight
+        left: blanketX + ribbonPaddingX,
+        top: blanketY + ribbonPaddingY,
+        right: blanketX + displayWidth - ribbonPaddingX,
+        bottom: blanketY + displayHeight - ribbonPaddingY
     };
 
     return (
@@ -214,7 +222,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
                                     cornerRadius={8}
                                     listening={false}
                                 />
-                                
+
                                 {/* Baby blanket image - scaled based on actual dimensions */}
                                 {blanketImage && (
                                     <KonvaImage
@@ -226,31 +234,35 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
                                         listening={false}
                                     />
                                 )}
-                                
-                                {/* Draggable area border */}
+
+                                {/* Visual indicator of draggable canvas area (interior of blanket) */}
                                 <Rect
-                                    x={blanketX}
-                                    y={blanketY}
-                                    width={displayWidth}
-                                    height={displayHeight}
-                                    stroke="#666"
-                                    strokeWidth={1}
-                                    dash={[5, 5]}
+                                    x={blanketBounds.left}
+                                    y={blanketBounds.top}
+                                    width={blanketBounds.right - blanketBounds.left}
+                                    height={blanketBounds.bottom - blanketBounds.top}
+                                    stroke="#4A90E2"
+                                    strokeWidth={2}
+                                    dash={[8, 4]}
                                     listening={false}
+                                    opacity={0.6}
                                 />
-                                
+
                                 {/* Motifs */}
                                 <Group>
                                     {placedMotifs.map((motif) => (
                                         <DraggableMotif
                                             key={motif.id}
                                             motif={motif}
+                                            // Pass all other motifs for collision detection
+                                            otherMotifs={placedMotifs.filter(m => m.id !== motif.id)}
                                             isSelected={motif.id === selectedId}
                                             onSelect={() => selectMotif(motif.id)}
                                             onChange={updateMotif}
                                             onDuplicate={duplicateMotif}
                                             onDelete={deleteMotif}
                                             sweaterBounds={blanketBounds}
+                                            canAddMore={motifCount < maxMotifs}
                                         />
                                     ))}
                                 </Group>
@@ -276,12 +288,14 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({ blanketDimensions = {
                                                 <DraggableMotif
                                                     key={motif.id}
                                                     motif={motif}
+                                                    otherMotifs={placedMotifs.filter(m => m.id !== motif.id)}
                                                     isSelected={motif.id === selectedId}
                                                     onSelect={() => selectMotif(motif.id)}
                                                     onChange={updateMotif}
                                                     onDuplicate={duplicateMotif}
                                                     onDelete={deleteMotif}
                                                     sweaterBounds={{ ...designBounds, left: 0, top: 0, right: 400, bottom: 400 }}
+                                                    canAddMore={motifCount < maxMotifs}
                                                 />
                                             ))}
                                         </Group>

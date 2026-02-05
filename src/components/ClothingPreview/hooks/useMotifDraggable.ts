@@ -16,14 +16,37 @@ export const useMotifDraggable = (
         const node = nodeRef.current;
         if (!node) return;
 
-        const newX = Math.max(
-            bounds.left,
-            Math.min(bounds.right - (node.width() * node.scaleX()), node.x())
-        );
-        const newY = Math.max(
-            bounds.top,
-            Math.min(bounds.bottom - (node.height() * node.scaleY()), node.y())
-        );
+        const width = node.width();
+        const height = node.height();
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        
+        // Calculate the actual image size
+        const actualWidth = width * scaleX;
+        const actualHeight = height * scaleY;
+
+        // Get current position
+        let newX = node.x();
+        let newY = node.y();
+
+        // Symmetric constraints for perfect rectangle matching blanket interior
+        // Left edge: if position would be left of bounds.left, snap to bounds.left
+        if (newX < bounds.left) {
+            newX = bounds.left;
+        }
+        // Right edge: if right edge of image would exceed bounds.right, snap back
+        if (newX + actualWidth > bounds.right) {
+            newX = bounds.right - actualWidth;
+        }
+        
+        // Top edge: if position would be above bounds.top, snap to bounds.top
+        if (newY < bounds.top) {
+            newY = bounds.top;
+        }
+        // Bottom edge: if bottom edge of image would exceed bounds.bottom, snap back
+        if (newY + actualHeight > bounds.bottom) {
+            newY = bounds.bottom - actualHeight;
+        }
 
         node.position({ x: newX, y: newY });
     };
