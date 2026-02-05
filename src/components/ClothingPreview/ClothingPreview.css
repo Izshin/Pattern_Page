@@ -10,6 +10,10 @@
     transition: transform 0.3s ease;
 }
 
+.sweater-preview.dropdown-open {
+    transform: translateX(370px);
+}
+
 
 .sweater-container {
     position: relative;

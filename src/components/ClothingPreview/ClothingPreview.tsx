@@ -23,7 +23,9 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     const patternConfig = usePatternConfig(blanketDimensions);
     
     // Dimension calculator service (memoized)
-    const dimensionCalculator = useMemo(() => new DimensionCalculator(), []);
+    const dimensionCalculator = useMemo(() => new DimensionCalculator({
+        containerHeight: 390  // Reduced from default 500
+    }), []);
 
     // Calculate display dimensions for baby blanket
     const blanketCalc = useMemo(() => {
@@ -59,6 +61,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
 
     // Baby blanket image state
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const initialized = useRef(false);
 
     // Load baby blanket image
@@ -110,9 +113,12 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
 
     return (
         <>
-            <ClothingDropdown />
+            <ClothingDropdown 
+                isOpen={isDropdownOpen}
+                onToggle={() => setIsDropdownOpen(!isDropdownOpen)}
+            />
 
-            <div className="sweater-preview">
+            <div className={`sweater-preview ${isDropdownOpen ? 'dropdown-open' : ''}`}>
                 <div className="sweater-container">
                     <PatternCanvas
                         isBabyBlanket={patternConfig.isBabyBlanket}

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { PatternType } from '../../models/PatternConfig';
 import SweaterIcon from '../../../../assets/Logos/SweaterIcon.svg?react';
 import './ClothingDropdown.css';
@@ -42,12 +41,19 @@ const PATTERN_MENU_ITEMS: PatternMenuItem[] = [
     }
 ];
 
+interface ClothingDropdownProps {
+    isOpen?: boolean;
+    onToggle?: () => void;
+}
+
 /**
  * Dropdown component for selecting clothing patterns
  * Extracted from ClothingPreview for better separation of concerns
  */
-export const ClothingDropdown: React.FC = () => {
-    const [isOpen, setIsOpen] = useState(false);
+export const ClothingDropdown: React.FC<ClothingDropdownProps> = ({ 
+    isOpen = false, 
+    onToggle 
+}) => {
 
     const handlePatternSelect = (patternType: PatternType) => {
         // Navigate to new pattern
@@ -68,7 +74,7 @@ export const ClothingDropdown: React.FC = () => {
         <div className="clothing-dropdown">
             <button
                 className="dropdown-button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={onToggle}
             >
                 Clothing
                 <svg
