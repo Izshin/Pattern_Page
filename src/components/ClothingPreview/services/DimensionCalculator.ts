@@ -6,6 +6,7 @@ interface CanvasConfig {
     containerHeight: number;
     padding: number;
     maxSize: number;
+    ribbonSize: number; // Size of decorative border/ribbon in cm (from actual blanket dimensions)
 }
 
 interface CalculationResult {
@@ -28,7 +29,8 @@ export class DimensionCalculator {
             containerWidth: config.containerWidth ?? 400,
             containerHeight: config.containerHeight ?? 500,
             padding: config.padding ?? 20,
-            maxSize: config.maxSize ?? 140
+            maxSize: config.maxSize ?? 140,
+            ribbonSize: config.ribbonSize ?? 5 // Default 5cm ribbon/border
         };
     }
 
@@ -54,12 +56,17 @@ export class DimensionCalculator {
         const x = padding + (availableWidth - displayWidth) / 2;
         const y = padding + (availableHeight - displayHeight) / 2;
 
-        // Create bounds with slight adjustments for better fit
+        // Calculate ribbon offset in pixels (scaled from cm)
+        // The ribbon size is in cm, scale it to pixels based on the pattern scale
+        const ribbonOffsetX = (this.config.ribbonSize / actualDimensions.width) * displayWidth;
+        const ribbonOffsetY = (this.config.ribbonSize / actualDimensions.height) * displayHeight;
+
+        // Create bounds accounting for decorative ribbon/border
         const bounds = new Bounds(
-            x,
-            y,
-            x + displayWidth + 5,
-            y + displayHeight + 10
+            x + ribbonOffsetX,
+            y + ribbonOffsetY,
+            x + displayWidth - ribbonOffsetX,
+            y + displayHeight - ribbonOffsetY
         );
 
         return {

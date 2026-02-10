@@ -51,19 +51,25 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
 
     const renderMotifs = (bounds: Bounds) => (
         <Group>
-            {motifs.map((motif) => (
-                <DraggableMotif
-                    key={motif.id}
-                    motif={motif}
-                    isSelected={motif.id === selectedId}
-                    onSelect={() => onSelectMotif(motif.id)}
-                    onChange={onMotifChange}
-                    onDuplicate={onMotifDuplicate}
-                    onDelete={onMotifDelete}
-                    sweaterBounds={bounds.toObject()}
-                    canAddMore={canAddMore}
-                />
-            ))}
+            {motifs.map((motif) => {
+                // Get all other motifs (excluding current one) for collision detection
+                const otherMotifs = motifs.filter(m => m.id !== motif.id);
+                
+                return (
+                    <DraggableMotif
+                        key={motif.id}
+                        motif={motif}
+                        isSelected={motif.id === selectedId}
+                        onSelect={() => onSelectMotif(motif.id)}
+                        onChange={onMotifChange}
+                        onDuplicate={onMotifDuplicate}
+                        onDelete={onMotifDelete}
+                        sweaterBounds={bounds.toObject()}
+                        canAddMore={canAddMore}
+                        otherMotifs={otherMotifs}
+                    />
+                );
+            })}
         </Group>
     );
 
@@ -99,6 +105,18 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
                         listening={false}
                     />
 
+                    {/* Blanket bounds visualization */}
+                    <Rect
+                        x={blanketDisplay.bounds.left}
+                        y={blanketDisplay.bounds.top}
+                        width={blanketDisplay.bounds.width}
+                        height={blanketDisplay.bounds.height}
+                        stroke="#FF808A"
+                        strokeWidth={3}
+                        dash={[10, 5]}
+                        listening={false}
+                    />
+
                     {/* Motifs */}
                     {renderMotifs(blanketDisplay.bounds)}
                 </Layer>
@@ -118,6 +136,18 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
                 className="motif-stage"
             >
                 <Layer>
+                    {/* Design bounds visualization */}
+                    <Rect
+                        x={designBounds.left}
+                        y={designBounds.top}
+                        width={designBounds.width}
+                        height={designBounds.height}
+                        stroke="#FF0000"
+                        strokeWidth={3}
+                        dash={[10, 5]}
+                        listening={false}
+                    />
+                    
                     {renderMotifs(new Bounds(designBounds.left, designBounds.top, designBounds.right, designBounds.bottom))}
                 </Layer>
             </Stage>

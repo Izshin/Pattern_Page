@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Image as KonvaImage, Group } from 'react-konva';
+import { Image as KonvaImage, Group, Rect } from 'react-konva';
 import Konva from 'konva';
 import { MotifActions } from './MotifActions';
 import { useMotifDraggable } from '../hooks/useMotifDraggable';
+import { checkRectIntersection } from '../../../utils/geometry';
 import type { Motif } from '../types';
 
 
@@ -20,6 +21,7 @@ interface DraggableMotifProps {
         bottom: number;
     };
     canAddMore?: boolean;
+    otherMotifs?: Motif[]; // Other motifs for collision detection
 }
 
 const DraggableMotif: React.FC<DraggableMotifProps> = ({
@@ -31,10 +33,12 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     onDelete,
     sweaterBounds,
     canAddMore = true,
+    otherMotifs = [],
 }) => {
     const groupRef = useRef<Konva.Group>(null);
     const imageRef = useRef<Konva.Image>(null);
     const actionsRef = useRef<Konva.Group>(null);
+    const lastValidPositionRef = useRef({ x: motif.x, y: motif.y });
 
     // Local State
     const [isHovered, setIsHovered] = useState(false);
@@ -47,6 +51,28 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     useEffect(() => {
         forceUpdate({});
     }, []);
+
+    // Update last valid position when motif position changes externally
+    useEffect(() => {
+        lastValidPositionRef.current = { x: motif.x, y: motif.y };
+    }, [motif.x, motif.y]);
+
+    // Helper function to check collision with other motifs
+    const checkCollisionWithOthers = (x: number, y: number, width: number, height: number): boolean => {
+        const currentRect = { x, y, width, height };
+        
+        return otherMotifs.some(other => {
+            const otherWidth = other.width * (other.scaleX || 1);
+            const otherHeight = other.height * (other.scaleY || 1);
+            const otherRect = {
+                x: other.x,
+                y: other.y,
+                width: otherWidth,
+                height: otherHeight
+            };
+            return checkRectIntersection(currentRect, otherRect);
+        });
+    };
 
     // Change Handlers
     const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -78,9 +104,21 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
             newY = sweaterBounds.bottom - actualHeight;
         }
 
-        // Update node position to bounded coordinates
-        node.x(newX);
-        node.y(newY);
+        // Check collision with other motifs
+        const hasCollision = checkCollisionWithOthers(newX, newY, actualWidth, actualHeight);
+        
+        if (hasCollision) {
+            // Revert to last valid position
+            newX = lastValidPositionRef.current.x;
+            newY = lastValidPositionRef.current.y;
+            node.x(newX);
+            node.y(newY);
+        } else {
+            // Update last valid position
+            lastValidPositionRef.current = { x: newX, y: newY };
+            node.x(newX);
+            node.y(newY);
+        }
 
         onChange({
             ...motif,
@@ -95,12 +133,12 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
         const node = e.target;
         let newX = node.x();
         let newY = node.y();
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
+        let scaleX = node.scaleX();
+        let scaleY = node.scaleY();
 
         // Calculate actual dimensions with scale
-        const actualWidth = motif.width * scaleX;
-        const actualHeight = motif.height * scaleY;
+        let actualWidth = motif.width * scaleX;
+        let actualHeight = motif.height * scaleY;
 
         // Border collision detection after transform - check all 4 edges
         // Left edge collision
@@ -120,9 +158,27 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
             newY = sweaterBounds.bottom - actualHeight;
         }
 
-        // Update node position if adjusted
-        node.x(newX);
-        node.y(newY);
+        // Check collision with other motifs after scaling
+        const hasCollision = checkCollisionWithOthers(newX, newY, actualWidth, actualHeight);
+        
+        if (hasCollision) {
+            // Revert to last valid position and scale
+            newX = lastValidPositionRef.current.x;
+            newY = lastValidPositionRef.current.y;
+            scaleX = motif.scaleX || 1;
+            scaleY = motif.scaleY || 1;
+            actualWidth = motif.width * scaleX;
+            actualHeight = motif.height * scaleY;
+            node.x(newX);
+            node.y(newY);
+            node.scaleX(scaleX);
+            node.scaleY(scaleY);
+        } else {
+            // Update last valid position
+            lastValidPositionRef.current = { x: newX, y: newY };
+            node.x(newX);
+            node.y(newY);
+        }
 
         onChange({
             ...motif,
@@ -157,6 +213,17 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
                     height={motif.height}
                     x={0}
                     y={0}
+                />
+
+                {/* Bounds visualization */}
+                <Rect
+                    x={0}
+                    y={0}
+                    width={motif.width}
+                    height={motif.height}
+                    stroke="#FF808A"
+                    strokeWidth={2}
+                    listening={false}
                 />
 
                 <MotifActions
