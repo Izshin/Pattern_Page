@@ -1,5 +1,6 @@
 import type { Motif } from '../types';
 import { Bounds } from '../models/Bounds';
+import { findClosestValidPosition } from '../../../utils/placement';
 
 interface MotifManagerConfig {
     maxMotifs?: number;
@@ -43,7 +44,8 @@ export class MotifManager {
         imageUrl: string,
         designBounds: Bounds,
         fallbackUrl?: string,
-        displayDimensions?: { width: number; height: number } | null
+        displayDimensions?: { width: number; height: number } | null,
+        existingMotifs: Motif[] = []
     ): Promise<Motif> {
         return new Promise((resolve, reject) => {
             const img = new window.Image();
@@ -57,17 +59,35 @@ export class MotifManager {
                 const width = displayDimensions?.width || 100;
                 const height = displayDimensions?.height || 100;
 
-                // Center position
-                const centerX = designBounds.centerX - width / 2;
-                const centerY = designBounds.centerY - height / 2;
+                // Start at center position
+                const startX = designBounds.centerX - width / 2;
+                const startY = designBounds.centerY - height / 2;
+
+                // Find valid position that doesn't overlap
+                const validPosition = findClosestValidPosition(
+                    startX,
+                    startY,
+                    width,
+                    height,
+                    1, // scaleX
+                    1, // scaleY
+                    existingMotifs,
+                    {
+                        left: designBounds.left,
+                        top: designBounds.top,
+                        right: designBounds.right,
+                        bottom: designBounds.bottom
+                    },
+                    2 // padding
+                );
 
                 const stitches = this.calculateStitches(width, height);
 
                 const newMotif: Motif = {
                     id,
                     image: img,
-                    x: centerX,
-                    y: centerY,
+                    x: validPosition.x,
+                    y: validPosition.y,
                     width,
                     height,
                     stitches,
@@ -80,7 +100,7 @@ export class MotifManager {
                 // Try fallback image if provided
                 if (fallbackUrl && fallbackUrl !== imageUrl) {
                     console.warn(`Failed to load motif image: ${imageUrl}, trying fallback: ${fallbackUrl}`);
-                    this.createMotif(fallbackUrl, designBounds, undefined, displayDimensions).then(resolve).catch(reject);
+                    this.createMotif(fallbackUrl, designBounds, undefined, displayDimensions, existingMotifs).then(resolve).catch(reject);
                 } else {
                     reject(new Error(`Failed to load motif image: ${imageUrl}`));
                 }
@@ -93,30 +113,39 @@ export class MotifManager {
      */
     duplicateMotif(
         sourceMotif: Motif,
-        designBounds: Bounds
+        designBounds: Bounds,
+        existingMotifs: Motif[] = []
     ): Motif {
         const newId = `motif-${Date.now()}`;
         const offset = 20;
 
-        let newX = sourceMotif.x + offset;
-        let newY = sourceMotif.y + offset;
+        // Start searching from offset position
+        const startX = sourceMotif.x + offset;
+        const startY = sourceMotif.y + offset;
 
-        // Keep within bounds
-        const actualWidth = sourceMotif.width * (sourceMotif.scaleX || 1);
-        const actualHeight = sourceMotif.height * (sourceMotif.scaleY || 1);
-        
-        if (newX + actualWidth > designBounds.right) {
-            newX = designBounds.left;
-        }
-        if (newY + actualHeight > designBounds.bottom) {
-            newY = designBounds.top;
-        }
+        // Find valid position that doesn't overlap
+        const validPosition = findClosestValidPosition(
+            startX,
+            startY,
+            sourceMotif.width,
+            sourceMotif.height,
+            sourceMotif.scaleX || 1,
+            sourceMotif.scaleY || 1,
+            existingMotifs,
+            {
+                left: designBounds.left,
+                top: designBounds.top,
+                right: designBounds.right,
+                bottom: designBounds.bottom
+            },
+            2 // padding
+        );
 
         return {
             ...sourceMotif,
             id: newId,
-            x: newX,
-            y: newY,
+            x: validPosition.x,
+            y: validPosition.y,
         };
     }
 
@@ -168,6 +197,45 @@ export class MotifManager {
             y: newY,
             stitches
         };
+    }
+
+    /**
+     * Resolve overlaps for all motifs after size changes
+     * Repositions overlapping motifs to valid locations
+     */
+    resolveOverlaps(
+        motifs: Motif[],
+        designBounds: Bounds
+    ): Motif[] {
+        const resolvedMotifs: Motif[] = [];
+
+        for (const motif of motifs) {
+            // Find valid position for this motif
+            const validPosition = findClosestValidPosition(
+                motif.x,
+                motif.y,
+                motif.width,
+                motif.height,
+                motif.scaleX || 1,
+                motif.scaleY || 1,
+                resolvedMotifs, // Check against already resolved motifs
+                {
+                    left: designBounds.left,
+                    top: designBounds.top,
+                    right: designBounds.right,
+                    bottom: designBounds.bottom
+                },
+                2 // padding
+            );
+
+            resolvedMotifs.push({
+                ...motif,
+                x: validPosition.x,
+                y: validPosition.y
+            });
+        }
+
+        return resolvedMotifs;
     }
 
     /**

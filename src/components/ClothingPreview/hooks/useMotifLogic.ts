@@ -43,7 +43,8 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
                 imageUrl,
                 defaultBounds,
                 fallbackUrl,
-                motifDisplayDimensions
+                motifDisplayDimensions,
+                placedMotifs // Pass existing motifs for collision detection
             );
             setPlacedMotifs(prev => [...prev, newMotif]);
             setSelectedId(newMotif.id);
@@ -71,7 +72,8 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
 
         const newMotif = motifManager.duplicateMotif(
             motifToClone,
-            defaultBounds
+            defaultBounds,
+            placedMotifs // Pass existing motifs for collision detection
         );
 
         setPlacedMotifs(prev => [...prev, newMotif]);
@@ -91,11 +93,15 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
 
     // Update all motif sizes when tension changes
     const updateAllMotifSizes = (newDimensions: { width: number; height: number }) => {
-        setPlacedMotifs(prev => 
-            prev.map(motif => 
+        setPlacedMotifs(prev => {
+            // First, update all motif sizes
+            const resizedMotifs = prev.map(motif => 
                 motifManager.updateMotifSize(motif, newDimensions, defaultBounds)
-            )
-        );
+            );
+            
+            // Then resolve any overlaps that occurred due to size changes
+            return motifManager.resolveOverlaps(resizedMotifs, defaultBounds);
+        });
     };
 
     // Delete selected motif on keyboard shortcut
