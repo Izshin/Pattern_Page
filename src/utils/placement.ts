@@ -26,6 +26,7 @@ interface Position {
 /**
  * Finds the closest valid position for a motif that doesn't overlap with others.
  * Searches in a spiral pattern from the start position.
+ * Returns null if no valid position is found within the search limit.
  */
 export const findClosestValidPosition = (
     startX: number,
@@ -37,7 +38,7 @@ export const findClosestValidPosition = (
     existingMotifs: RectObject[],
     bounds: Bounds,
     padding: number = 0
-): Position => {
+): Position | null => {
     let x = startX;
     let y = startY;
     let step = 0;
@@ -111,6 +112,6 @@ export const findClosestValidPosition = (
         step++;
     }
 
-    // Fallback: Return original start if no spot found (or maybe just return start and let overlap happen)
-    return { x: startX, y: startY };
+    // No valid position found within search limit
+    return null;
 };

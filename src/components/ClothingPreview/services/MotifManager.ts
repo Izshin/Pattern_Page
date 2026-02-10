@@ -81,6 +81,12 @@ export class MotifManager {
                     2 // padding
                 );
 
+                // If no valid position found, throw specific error
+                if (!validPosition) {
+                    reject(new Error('NO_SPACE_AVAILABLE'));
+                    return;
+                }
+
                 const stitches = this.calculateStitches(width, height);
 
                 const newMotif: Motif = {
@@ -110,6 +116,7 @@ export class MotifManager {
 
     /**
      * Duplicate an existing motif with offset
+     * Throws error if no valid position is available
      */
     duplicateMotif(
         sourceMotif: Motif,
@@ -140,6 +147,11 @@ export class MotifManager {
             },
             2 // padding
         );
+
+        // If no valid position found, throw specific error
+        if (!validPosition) {
+            throw new Error('NO_SPACE_AVAILABLE');
+        }
 
         return {
             ...sourceMotif,
@@ -202,6 +214,7 @@ export class MotifManager {
     /**
      * Resolve overlaps for all motifs after size changes
      * Repositions overlapping motifs to valid locations
+     * If no valid position found, keeps original position
      */
     resolveOverlaps(
         motifs: Motif[],
@@ -228,10 +241,11 @@ export class MotifManager {
                 2 // padding
             );
 
+            // Use valid position if found, otherwise keep original
             resolvedMotifs.push({
                 ...motif,
-                x: validPosition.x,
-                y: validPosition.y
+                x: validPosition?.x ?? motif.x,
+                y: validPosition?.y ?? motif.y
             });
         }
 

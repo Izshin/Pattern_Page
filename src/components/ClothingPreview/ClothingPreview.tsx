@@ -5,6 +5,7 @@ import { useMotifLogic } from './hooks/useMotifLogic';
 import { usePatternConfig } from './hooks/usePatternConfig';
 import { DimensionCalculator } from './services';
 import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png';
+import InfoModal from '../Modal/InfoModal';
 
 interface ClothingPreviewProps {
     blanketDimensions?: { width: number; height: number };
@@ -84,12 +85,17 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         motifCount,
         maxMotifs,
         updateAllMotifSizes
-    } = useMotifLogic({ designBounds, motifDisplayDimensions });
+    } = useMotifLogic({ 
+        designBounds, 
+        motifDisplayDimensions,
+        onNoSpaceAvailable: () => setIsNoSpaceModalOpen(true)
+    });
 
     // Baby blanket image state
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showBounds, setShowBounds] = useState(false); // Toggle for bounds visualization
+    const [isNoSpaceModalOpen, setIsNoSpaceModalOpen] = useState(false);
     const initialized = useRef(false);
 
     // Load baby blanket image
@@ -155,6 +161,26 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                 isOpen={isDropdownOpen}
                 onToggle={() => setIsDropdownOpen(!isDropdownOpen)}
             />
+
+            <InfoModal
+                isOpen={isNoSpaceModalOpen}
+                onClose={() => setIsNoSpaceModalOpen(false)}
+                title="No Space Available"
+                className="error-modal"
+            >
+                <h3>Cannot place motif</h3>
+                <p>
+                    There is not enough space on the pattern to place a motif with the current size.
+                </p>
+                <p>
+                    Try one of the following:
+                </p>
+                <ul>
+                    <li>Remove some existing motifs</li>
+                    <li>Reduce the motif size by adjusting the tension</li>
+                    <li>Increase the pattern dimensions</li>
+                </ul>
+            </InfoModal>
 
             <div className={`sweater-preview ${isDropdownOpen ? 'dropdown-open' : ''}`}>
                 <div className="sweater-container">

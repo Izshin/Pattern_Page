@@ -7,6 +7,7 @@ interface UseMotifLogicOptions {
     designBounds?: Bounds;
     maxMotifs?: number;
     motifDisplayDimensions?: { width: number; height: number } | null;
+    onNoSpaceAvailable?: () => void;
 }
 
 /**
@@ -14,7 +15,7 @@ interface UseMotifLogicOptions {
  * Uses MotifManager service for business logic
  */
 export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
-    const { designBounds, maxMotifs, motifDisplayDimensions } = options;
+    const { designBounds, maxMotifs, motifDisplayDimensions, onNoSpaceAvailable } = options;
     
     // Create service instance (memoized)
     const motifManager = useMemo(
@@ -49,7 +50,12 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
             setPlacedMotifs(prev => [...prev, newMotif]);
             setSelectedId(newMotif.id);
         } catch (error) {
-            console.error('Failed to add motif:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage === 'NO_SPACE_AVAILABLE') {
+                onNoSpaceAvailable?.();
+            } else {
+                console.error('Failed to add motif:', error);
+            }
         }
     };
 
@@ -70,14 +76,23 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
         const motifToClone = placedMotifs.find(m => m.id === id);
         if (!motifToClone) return;
 
-        const newMotif = motifManager.duplicateMotif(
-            motifToClone,
-            defaultBounds,
-            placedMotifs // Pass existing motifs for collision detection
-        );
+        try {
+            const newMotif = motifManager.duplicateMotif(
+                motifToClone,
+                defaultBounds,
+                placedMotifs // Pass existing motifs for collision detection
+            );
 
-        setPlacedMotifs(prev => [...prev, newMotif]);
-        setSelectedId(newMotif.id);
+            setPlacedMotifs(prev => [...prev, newMotif]);
+            setSelectedId(newMotif.id);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage === 'NO_SPACE_AVAILABLE') {
+                onNoSpaceAvailable?.();
+            } else {
+                console.error('Failed to duplicate motif:', error);
+            }
+        }
     };
 
     // Delete motif
