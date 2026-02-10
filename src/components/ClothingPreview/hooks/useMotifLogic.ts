@@ -8,6 +8,8 @@ interface UseMotifLogicOptions {
     maxMotifs?: number;
     motifDisplayDimensions?: { width: number; height: number } | null;
     onNoSpaceAvailable?: () => void;
+    onMotifsCannotFit?: () => void;
+    onMotifsUpdatedSuccessfully?: () => void;
 }
 
 /**
@@ -15,7 +17,7 @@ interface UseMotifLogicOptions {
  * Uses MotifManager service for business logic
  */
 export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
-    const { designBounds, maxMotifs, motifDisplayDimensions, onNoSpaceAvailable } = options;
+    const { designBounds, maxMotifs, motifDisplayDimensions, onNoSpaceAvailable, onMotifsCannotFit, onMotifsUpdatedSuccessfully } = options;
     
     // Create service instance (memoized)
     const motifManager = useMemo(
@@ -109,13 +111,29 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
     // Update all motif sizes when tension changes
     const updateAllMotifSizes = (newDimensions: { width: number; height: number }) => {
         setPlacedMotifs(prev => {
-            // First, update all motif sizes
-            const resizedMotifs = prev.map(motif => 
-                motifManager.updateMotifSize(motif, newDimensions, defaultBounds)
-            );
-            
-            // Then resolve any overlaps that occurred due to size changes
-            return motifManager.resolveOverlaps(resizedMotifs, defaultBounds);
+            try {
+                // First, update all motif sizes
+                const resizedMotifs = prev.map(motif => 
+                    motifManager.updateMotifSize(motif, newDimensions, defaultBounds)
+                );
+                
+                // Then resolve any overlaps that occurred due to size changes
+                const result = motifManager.resolveOverlaps(resizedMotifs, defaultBounds);
+                
+                // If successful, notify parent that motifs were updated successfully
+                onMotifsUpdatedSuccessfully?.();
+                
+                return result;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                if (errorMessage === 'MOTIFS_CANNOT_FIT') {
+                    onMotifsCannotFit?.();
+                } else {
+                    console.error('Failed to update motif sizes:', error);
+                }
+                // Return previous state unchanged on error
+                return prev;
+            }
         });
     };
 

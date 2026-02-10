@@ -214,13 +214,14 @@ export class MotifManager {
     /**
      * Resolve overlaps for all motifs after size changes
      * Repositions overlapping motifs to valid locations
-     * If no valid position found, keeps original position
+     * Throws error if motifs cannot fit in bounds
      */
     resolveOverlaps(
         motifs: Motif[],
         designBounds: Bounds
     ): Motif[] {
         const resolvedMotifs: Motif[] = [];
+        let hasUnfittableMotif = false;
 
         for (const motif of motifs) {
             // Find valid position for this motif
@@ -241,12 +242,22 @@ export class MotifManager {
                 2 // padding
             );
 
+            // Track if any motif couldn't find a valid position
+            if (!validPosition && motifs.length > 1) {
+                hasUnfittableMotif = true;
+            }
+
             // Use valid position if found, otherwise keep original
             resolvedMotifs.push({
                 ...motif,
                 x: validPosition?.x ?? motif.x,
                 y: validPosition?.y ?? motif.y
             });
+        }
+
+        // Throw error if multiple motifs can't fit
+        if (hasUnfittableMotif) {
+            throw new Error('MOTIFS_CANNOT_FIT');
         }
 
         return resolvedMotifs;

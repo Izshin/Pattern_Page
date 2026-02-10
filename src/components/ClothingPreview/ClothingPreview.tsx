@@ -11,6 +11,8 @@ interface ClothingPreviewProps {
     blanketDimensions?: { width: number; height: number };
     motifSize?: { stitches: number; rows: number; widthCm: number; heightCm: number } | null;
     motifImageUrl?: string | null;
+    onMotifsCannotFit?: () => void;
+    onMotifsUpdatedSuccessfully?: () => void;
 }
 
 interface MotifDisplayDimensions {
@@ -27,7 +29,9 @@ interface MotifDisplayDimensions {
 const ClothingPreview: React.FC<ClothingPreviewProps> = ({ 
     blanketDimensions = { width: 60, height: 80 },
     motifSize = null,
-    motifImageUrl = null
+    motifImageUrl = null,
+    onMotifsCannotFit,
+    onMotifsUpdatedSuccessfully
 }) => {
     // Pattern configuration from URL
     const patternConfig = usePatternConfig(blanketDimensions);
@@ -88,7 +92,12 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     } = useMotifLogic({ 
         designBounds, 
         motifDisplayDimensions,
-        onNoSpaceAvailable: () => setIsNoSpaceModalOpen(true)
+        onNoSpaceAvailable: () => setIsNoSpaceModalOpen(true),
+        onMotifsCannotFit: () => {
+            setIsImpossibleFitModalOpen(true);
+            onMotifsCannotFit?.();
+        },
+        onMotifsUpdatedSuccessfully
     });
 
     // Baby blanket image state
@@ -96,6 +105,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showBounds, setShowBounds] = useState(false); // Toggle for bounds visualization
     const [isNoSpaceModalOpen, setIsNoSpaceModalOpen] = useState(false);
+    const [isImpossibleFitModalOpen, setIsImpossibleFitModalOpen] = useState(false);
     const initialized = useRef(false);
 
     // Load baby blanket image
@@ -120,8 +130,13 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
 
     // Update motif sizes when tension changes (affects display dimensions)
     useEffect(() => {
-        if (motifDisplayDimensions && placedMotifs.length > 0) {
-            updateAllMotifSizes(motifDisplayDimensions);
+        if (motifDisplayDimensions) {
+            if (placedMotifs.length > 0) {
+                updateAllMotifSizes(motifDisplayDimensions);
+            } else {
+                // No motifs to update, so this is a successful "update" (trivially)
+                onMotifsUpdatedSuccessfully?.();
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [motifDisplayDimensions]);
@@ -171,6 +186,26 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                 <h3>Cannot place motif</h3>
                 <p>
                     There is not enough space on the pattern to place a motif with the current size.
+                </p>
+                <p>
+                    Try one of the following:
+                </p>
+                <ul>
+                    <li>Remove some existing motifs</li>
+                    <li>Reduce the motif size by adjusting the tension</li>
+                    <li>Increase the pattern dimensions</li>
+                </ul>
+            </InfoModal>
+
+            <InfoModal
+                isOpen={isImpossibleFitModalOpen}
+                onClose={() => setIsImpossibleFitModalOpen(false)}
+                title="Impossible to Fit Motifs"
+                className="error-modal"
+            >
+                <h3>Motifs too large</h3>
+                <p>
+                    The current motif size is too large to fit all motifs on the pattern.
                 </p>
                 <p>
                     Try one of the following:

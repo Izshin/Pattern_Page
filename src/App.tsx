@@ -126,14 +126,6 @@ function App() {
       });
       
       if (result.success) {
-        // Update previous valid values
-        previousValues.current = {
-          tensionMin: knittingTensionMin,
-          tensionMax: knittingTensionMax,
-          sizeMin: sizeMin,
-          sizeMax: sizeMax
-        };
-        
         setAccordionSections(result.sections);
         // Update blanket dimensions from backend calculations
         setBlanketDimensions({
@@ -256,6 +248,22 @@ function App() {
             blanketDimensions={blanketDimensions} 
             motifSize={motifSize}
             motifImageUrl={motifImageUrl}
+            onMotifsCannotFit={() => {
+              // Revert to previous valid values
+              setKnittingTensionMin(previousValues.current.tensionMin);
+              setKnittingTensionMax(previousValues.current.tensionMax);
+              setSizeMin(previousValues.current.sizeMin);
+              setSizeMax(previousValues.current.sizeMax);
+            }}
+            onMotifsUpdatedSuccessfully={() => {
+              // Only update previous values after confirming motifs fit successfully
+              previousValues.current = {
+                tensionMin: knittingTensionMin,
+                tensionMax: knittingTensionMax,
+                sizeMin: sizeMin,
+                sizeMax: sizeMax
+              };
+            }}
           />
         </div>
 
