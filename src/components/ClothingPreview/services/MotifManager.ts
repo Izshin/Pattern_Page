@@ -46,7 +46,8 @@ export class MotifManager {
     async createMotif(
         imageUrl: string,
         designBounds: Bounds,
-        existingMotifs: Motif[]
+        existingMotifs: Motif[],
+        fallbackUrl?: string
     ): Promise<Motif> {
         return new Promise((resolve, reject) => {
             const img = new window.Image();
@@ -92,7 +93,13 @@ export class MotifManager {
             };
 
             img.onerror = () => {
-                reject(new Error(`Failed to load motif image: ${imageUrl}`));
+                // Try fallback image if provided
+                if (fallbackUrl && fallbackUrl !== imageUrl) {
+                    console.warn(`Failed to load motif image: ${imageUrl}, trying fallback: ${fallbackUrl}`);
+                    this.createMotif(fallbackUrl, designBounds, existingMotifs).then(resolve).catch(reject);
+                } else {
+                    reject(new Error(`Failed to load motif image: ${imageUrl}`));
+                }
             };
         });
     }

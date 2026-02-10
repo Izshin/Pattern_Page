@@ -26,6 +26,9 @@ function App() {
   const [currentPattern, setCurrentPattern] = useState<string>('BabyBlanket')
   const [accordionSections, setAccordionSections] = useState<any[]>([])
   const [blanketDimensions, setBlanketDimensions] = useState({ width: 60, height: 80 })
+  const [motifSize, setMotifSize] = useState<{ stitches: number; rows: number; widthCm: number; heightCm: number } | null>(null)
+  const [motifImageUrl, setMotifImageUrl] = useState<string | null>(null)
+  const [motifDimensions, setMotifDimensions] = useState<{ width: number; height: number } | null>(null)
 
   // Fixed tension range for all patterns
   const tensionRange = { min: 8, max: 40 };
@@ -35,6 +38,22 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const patternParam = params.get('pattern') || 'BabyBlanket';
     setCurrentPattern(patternParam);
+    
+    // Read motif parameters from URL (PrestaShop integration)
+    const motifWidthParam = params.get('motifWidth');
+    const motifHeightParam = params.get('motifHeight');
+    const motifImageParam = params.get('motifImageUrl');
+    
+    if (motifWidthParam && motifHeightParam) {
+      setMotifDimensions({
+        width: parseInt(motifWidthParam, 10),
+        height: parseInt(motifHeightParam, 10)
+      });
+    }
+    
+    if (motifImageParam) {
+      setMotifImageUrl(decodeURIComponent(motifImageParam));
+    }
   }, []);
 
   // Fetch pattern data based on current pattern type
@@ -79,7 +98,11 @@ function App() {
         tensionX: knittingTensionMin,
         tensionY: knittingTensionMax,
         width: sizeMin,
-        height: sizeMax
+        height: sizeMax,
+        ...(motifDimensions && {
+          motifWidth: motifDimensions.width,
+          motifHeight: motifDimensions.height
+        })
       });
       
       if (result.success) {
@@ -89,6 +112,15 @@ function App() {
           width: result.defaults['width-cm'] || sizeMin,
           height: result.defaults['height-cm'] || sizeMax
         });
+        // Update motif size from backend calculations
+        if (result.calculated) {
+          setMotifSize({
+            stitches: result.calculated.motifWidthStitches || 0,
+            rows: result.calculated.motifHeightRows || 0,
+            widthCm: result.calculated.motifWidthCm || 0,
+            heightCm: result.calculated.motifHeightCm || 0
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to calculate pattern:', error);
@@ -168,7 +200,11 @@ function App() {
 
       <main className="main-content">
         <div className="left-section">
-          <ClothingPreview blanketDimensions={blanketDimensions} />
+          <ClothingPreview 
+            blanketDimensions={blanketDimensions} 
+            motifSize={motifSize}
+            motifImageUrl={motifImageUrl}
+          />
         </div>
 
         <div className="right-section">

@@ -24,7 +24,7 @@ const router = express.Router();
  */
 router.post("/calculate", async (req, res) => {
     try {
-        const { patternFile, tensionX, tensionY, width, height } = req.body;
+        const { patternFile, tensionX, tensionY, width, height, motifWidth, motifHeight } = req.body;
 
         // Validate inputs
         if (!patternFile || !tensionX || !tensionY || !width || !height) {
@@ -44,6 +44,14 @@ router.post("/calculate", async (req, res) => {
         patternData.defaults["slider-tension"].y = Number(tensionY);
         patternData.defaults["width-cm"] = Number(width);
         patternData.defaults["height-cm"] = Number(height);
+        
+        // Override motif dimensions if provided from URL (PrestaShop integration)
+        if (motifWidth) {
+            patternData.defaults["motif-width-stitches"] = Number(motifWidth);
+        }
+        if (motifHeight) {
+            patternData.defaults["motif-height-rows"] = Number(motifHeight);
+        }
 
         // Calculate pattern
         const result = solvePattern(patternData);

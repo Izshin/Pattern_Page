@@ -31,7 +31,7 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     // Add motif using service
-    const addMotif = async (imageUrl: string) => {
+    const addMotif = async (imageUrl: string, fallbackUrl?: string) => {
         if (!motifManager.canAddMotif(placedMotifs.length)) {
             console.warn(`Maximum of ${motifManager.getMaxMotifs()} motifs allowed`);
             return;
@@ -41,7 +41,8 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
             const newMotif = await motifManager.createMotif(
                 imageUrl,
                 defaultBounds,
-                placedMotifs
+                placedMotifs,
+                fallbackUrl
             );
             setPlacedMotifs(prev => [...prev, newMotif]);
             setSelectedId(newMotif.id);

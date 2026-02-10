@@ -8,6 +8,8 @@ import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png
 
 interface ClothingPreviewProps {
     blanketDimensions?: { width: number; height: number };
+    motifSize?: { stitches: number; rows: number; widthCm: number; heightCm: number } | null;
+    motifImageUrl?: string | null;
 }
 
 /**
@@ -17,7 +19,9 @@ interface ClothingPreviewProps {
  * - Improved component composition
  */
 const ClothingPreview: React.FC<ClothingPreviewProps> = ({ 
-    blanketDimensions = { width: 60, height: 80 } 
+    blanketDimensions = { width: 60, height: 80 },
+    motifSize = null,
+    motifImageUrl = null
 }) => {
     // Pattern configuration from URL
     const patternConfig = usePatternConfig(blanketDimensions);
@@ -77,10 +81,18 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     useEffect(() => {
         if (!initialized.current) {
             initialized.current = true;
-            addMotif('/IconsImages/ImageIcon.png');
+            // Use motif from URL if provided, with fallback to default
+            const defaultImage = '/IconsImages/ImageIcon.png';
+            if (motifImageUrl) {
+                // Try custom image with fallback to default
+                addMotif(motifImageUrl, defaultImage);
+            } else {
+                // Use default image directly
+                addMotif(defaultImage);
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [motifImageUrl]);
 
     // Deselect motif when clicking outside canvas
     useEffect(() => {
@@ -136,7 +148,11 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                 </div>
                 <div className="motif-size">
                     <label>Motif size</label>
-                    <div className="size-display">46 × 54</div>
+                    <div className="size-display">
+                        {motifSize 
+                            ? `${motifSize.stitches} × ${motifSize.rows} stitches (${motifSize.widthCm} × ${motifSize.heightCm} cm)`
+                            : '-- × -- stitches'}
+                    </div>
                 </div>
             </div>
         </>

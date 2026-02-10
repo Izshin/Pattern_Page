@@ -73,6 +73,10 @@ function calculateBabyBlanketPattern(pat) {
         );
     }
 
+    // --- Calculate motif dimensions in cm ---
+    const motifWidthCm = Math.round(d["motif-width-stitches"] / stitchesPerCm);
+    const motifHeightCm = Math.round(d["motif-height-rows"] / rowsPerCm);
+
     // --- Update pat defaults ---
     d["cast-on"] = castOn;
 
@@ -82,7 +86,11 @@ function calculateBabyBlanketPattern(pat) {
         totalRows,
         ribbingRows,
         horizontalRepeats,
-        verticalRepeats
+        verticalRepeats,
+        motifWidthStitches: d["motif-width-stitches"],
+        motifHeightRows: d["motif-height-rows"],
+        motifWidthCm,
+        motifHeightCm
     };
 
     return { pat, warnings, errors };
