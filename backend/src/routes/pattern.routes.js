@@ -48,11 +48,13 @@ router.post("/calculate", async (req, res) => {
         patternData.defaults["height-cm"] = Number(height);
         
         // Override motif dimensions if provided from URL (PrestaShop integration)
-        if (motifWidth) {
+        if (motifWidth && motifHeight) {
             patternData.defaults["motif-width-stitches"] = Number(motifWidth);
-        }
-        if (motifHeight) {
             patternData.defaults["motif-height-rows"] = Number(motifHeight);
+        } else {
+            // Remove motif dimensions if not provided (no motif ID case)
+            delete patternData.defaults["motif-width-stitches"];
+            delete patternData.defaults["motif-height-rows"];
         }
 
         // Calculate pattern

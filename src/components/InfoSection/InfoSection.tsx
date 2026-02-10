@@ -11,6 +11,7 @@ interface InfoSectionProps {
     showFloatingButtons: boolean;
     accordionSections?: any[];
     isBabyBlanket?: boolean;
+    hasMotif?: boolean;
 }
 
 // Default data for sweater (fallback)
@@ -127,7 +128,7 @@ const ACCORDION_DATA = [
     }
 ];
 
-const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloatingButtons, accordionSections, isBabyBlanket }, ref) => {
+const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloatingButtons, accordionSections, isBabyBlanket, hasMotif = true }, ref) => {
     const [openAccordions, setOpenAccordions] = useState<Set<number>>(new Set());
 
     const toggleAccordion = (index: number) => {
@@ -165,11 +166,11 @@ const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloating
 
     const accordionData = [
         ...baseAccordionData,
-        {
+        ...(hasMotif ? [{
             id: baseAccordionData.length,
             title: 'Chart',
             content: <KnittingChart />
-        }
+        }] : [])
     ];
 
     const toggleAll = () => {

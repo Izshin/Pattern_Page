@@ -191,12 +191,23 @@
 }
 
 .slider-min {
-    z-index: 4;
-    /* Higher than max to ensure min handle is clickable if overlapping? */
+    z-index: 3;
 }
 
 .slider-max {
-    z-index: 3;
+    z-index: 4;
+    /* Higher z-index for max slider to prevent getting stuck when both are at same position */
+}
+
+/* When any slider is being interacted with, bring it to front */
+.dual-slider-container .slider-min:active,
+.dual-slider-container .slider-min:focus {
+    z-index: 5;
+}
+
+.dual-slider-container .slider-max:active,
+.dual-slider-container .slider-max:focus {
+    z-index: 5;
 }
 
 .slider::-webkit-slider-thumb {

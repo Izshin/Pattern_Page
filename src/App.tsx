@@ -140,14 +140,16 @@ function App() {
           width: result.defaults['width-cm'] || sizeMin,
           height: result.defaults['height-cm'] || sizeMax
         });
-        // Update motif size from backend calculations
-        if (result.calculated) {
+        // Update motif size from backend calculations (only if motif data exists)
+        if (result.calculated && result.calculated.motifWidthStitches && result.calculated.motifHeightRows) {
           setMotifSize({
-            stitches: result.calculated.motifWidthStitches || 0,
-            rows: result.calculated.motifHeightRows || 0,
+            stitches: result.calculated.motifWidthStitches,
+            rows: result.calculated.motifHeightRows,
             widthCm: result.calculated.motifWidthCm || 0,
             heightCm: result.calculated.motifHeightCm || 0
           });
+        } else {
+          setMotifSize(null);
         }
       } else if (result.errors && result.errors.length > 0) {
         // Motif size error - revert to previous values
@@ -294,6 +296,7 @@ function App() {
           showFloatingButtons={isInInfoSection}
           accordionSections={accordionSections}
           isBabyBlanket={isBabyBlanket}
+          hasMotif={motifImageUrl !== null}
         />
       )}
 

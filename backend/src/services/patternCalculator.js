@@ -22,60 +22,71 @@ function calculateBabyBlanketPattern(pat) {
         errors.push("Ribbing height is too large for the blanket height.");
     }
 
-    // --- Horizontal motif calculation ---
-    const usableStitches =
-        totalStitches -
-        d["ribbing-width-stitches"] * 2 -
-        d["before-motif-stitches"];
+    // Check if motif dimensions are provided
+    const hasMotif = d["motif-width-stitches"] && d["motif-height-rows"];
 
-    const horizontalRepeats = Math.floor(
-        usableStitches / d["motif-width-stitches"]
-    );
+    let horizontalRepeats = 0;
+    let verticalRepeats = 0;
+    let castOn = totalStitches;
+    let motifWidthCm = null;
+    let motifHeightCm = null;
 
-    if (horizontalRepeats < 1) {
-        errors.push("Motif does not fit horizontally.");
-    }
+    if (hasMotif) {
+        // --- Horizontal motif calculation ---
+        const usableStitches =
+            totalStitches -
+            d["ribbing-width-stitches"] * 2 -
+            d["before-motif-stitches"];
 
-    const remainingStitches =
-        usableStitches -
-        horizontalRepeats * d["motif-width-stitches"];
-
-    if (remainingStitches !== 0) {
-        warnings.push(
-            `Motif does not fit evenly across width (${remainingStitches} leftover stitches).`
+        horizontalRepeats = Math.floor(
+            usableStitches / d["motif-width-stitches"]
         );
-    }
 
-    // --- Cast-on (derived value) ---
-    const castOn =
-        d["ribbing-width-stitches"] * 2 +
-        d["before-motif-stitches"] +
-        horizontalRepeats * d["motif-width-stitches"];
+        if (horizontalRepeats < 1) {
+            errors.push("Motif does not fit horizontally.");
+        }
 
-    // --- Vertical motif calculation ---
-    const usableRows = totalRows - ribbingRows * 2;
+        const remainingStitches =
+            usableStitches -
+            horizontalRepeats * d["motif-width-stitches"];
 
-    const verticalRepeats = Math.floor(
-        usableRows / d["motif-height-rows"]
-    );
+        if (remainingStitches !== 0) {
+            warnings.push(
+                `Motif does not fit evenly across width (${remainingStitches} leftover stitches).`
+            );
+        }
 
-    if (verticalRepeats < 1) {
-        errors.push("Motif does not fit vertically.");
-    }
+        // --- Cast-on (derived value) ---
+        castOn =
+            d["ribbing-width-stitches"] * 2 +
+            d["before-motif-stitches"] +
+            horizontalRepeats * d["motif-width-stitches"];
 
-    const remainingRows =
-        usableRows -
-        verticalRepeats * d["motif-height-rows"];
+        // --- Vertical motif calculation ---
+        const usableRows = totalRows - ribbingRows * 2;
 
-    if (remainingRows !== 0) {
-        warnings.push(
-            `Motif does not fit evenly vertically (${remainingRows} leftover rows).`
+        verticalRepeats = Math.floor(
+            usableRows / d["motif-height-rows"]
         );
-    }
 
-    // --- Calculate motif dimensions in cm ---
-    const motifWidthCm = Math.round(d["motif-width-stitches"] / stitchesPerCm);
-    const motifHeightCm = Math.round(d["motif-height-rows"] / rowsPerCm);
+        if (verticalRepeats < 1) {
+            errors.push("Motif does not fit vertically.");
+        }
+
+        const remainingRows =
+            usableRows -
+            verticalRepeats * d["motif-height-rows"];
+
+        if (remainingRows !== 0) {
+            warnings.push(
+                `Motif does not fit evenly vertically (${remainingRows} leftover rows).`
+            );
+        }
+
+        // --- Calculate motif dimensions in cm ---
+        motifWidthCm = Math.round(d["motif-width-stitches"] / stitchesPerCm);
+        motifHeightCm = Math.round(d["motif-height-rows"] / rowsPerCm);
+    }
 
     // --- Update pat defaults ---
     d["cast-on"] = castOn;
@@ -87,10 +98,12 @@ function calculateBabyBlanketPattern(pat) {
         ribbingRows,
         horizontalRepeats,
         verticalRepeats,
-        motifWidthStitches: d["motif-width-stitches"],
-        motifHeightRows: d["motif-height-rows"],
-        motifWidthCm,
-        motifHeightCm
+        ...(hasMotif && {
+            motifWidthStitches: d["motif-width-stitches"],
+            motifHeightRows: d["motif-height-rows"],
+            motifWidthCm,
+            motifHeightCm
+        })
     };
 
     return { pat, warnings, errors };
@@ -119,6 +132,29 @@ function interpolateContent(template, values) {
 }
 
 /**
+ * Remove motif-related lines from content
+ */
+function removeMotifLines(content) {
+    return content
+        .split('\n')
+        .filter(line => {
+            // Remove lines containing motif-related placeholders or keywords
+            const motifKeywords = [
+                'motif-width-stitches',
+                'motif-height-rows',
+                'Motif size:',
+                'Motif repeats:',
+                'horizontalRepeats',
+                'verticalRepeats'
+            ];
+            return !motifKeywords.some(keyword => line.includes(keyword));
+        })
+        .join('\n')
+        // Clean up any double newlines that might result
+        .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
  * 3) Final solved process
  */
 function solvePattern(pat) {
@@ -132,14 +168,23 @@ function solvePattern(pat) {
         };
     }
 
+    // Check if motif data exists
+    const hasMotif = result.pat.defaults["motif-width-stitches"] && result.pat.defaults["motif-height-rows"];
+
     // Merge defaults and calculated values for interpolation
     const allValues = {
         ...result.pat.defaults,
         calculated: result.pat.calculated
     };
 
+    // Remove motif-related lines from content if no motif
+    let contentTemplate = result.pat.content;
+    if (!hasMotif) {
+        contentTemplate = removeMotifLines(contentTemplate);
+    }
+
     const finalContent = interpolateContent(
-        result.pat.content,
+        contentTemplate,
         allValues
     );
 

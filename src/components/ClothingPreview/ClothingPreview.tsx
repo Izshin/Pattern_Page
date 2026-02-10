@@ -158,6 +158,17 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
 
             <div className={`sweater-preview ${isDropdownOpen ? 'dropdown-open' : ''}`}>
                 <div className="sweater-container">
+                    {motifImageUrl && (
+                        <label className="bounds-toggle">
+                            <span className="bounds-toggle-text">Show bounds</span>
+                            <input 
+                                type="checkbox" 
+                                checked={showBounds} 
+                                onChange={(e) => setShowBounds(e.target.checked)}
+                            />
+                            <span className="toggle-switch"></span>
+                        </label>
+                    )}
                     <PatternCanvas
                         isBabyBlanket={patternConfig.isBabyBlanket}
                         motifs={placedMotifs}
@@ -175,17 +186,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                 </div>
                 {motifImageUrl && (
                     <div className="motif-size">
-                        <div className="motif-header">
-                            <label>Motif size</label>
-                            <label className="bounds-toggle">
-                                <input 
-                                    type="checkbox" 
-                                    checked={showBounds} 
-                                    onChange={(e) => setShowBounds(e.target.checked)}
-                                />
-                                <span>Show bounds</span>
-                            </label>
-                        </div>
+                        <label>Motif size</label>
                         <div className="size-display">
                             {motifSize 
                                 ? `${motifSize.stitches} × ${motifSize.rows} stitches (${motifSize.widthCm} × ${motifSize.heightCm} cm)`
