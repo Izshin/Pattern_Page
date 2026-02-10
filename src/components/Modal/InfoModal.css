@@ -133,3 +133,25 @@
     height: 64px;
     opacity: 0.5;
 }
+
+/* Error Modal - Smaller and single column */
+.info-modal.error-modal {
+    max-width: 600px;
+    padding: 2.5rem 3rem;
+}
+
+.error-modal .modal-content {
+    display: block;
+}
+
+.error-modal .modal-left {
+    padding-right: 0;
+}
+
+.error-modal .modal-right {
+    display: none;
+}
+
+.error-modal .modal-title-container h2 {
+    font-size: 3.6rem;
+}

@@ -6,6 +6,7 @@ import { MotifManager } from '../services/MotifManager';
 interface UseMotifLogicOptions {
     designBounds?: Bounds;
     maxMotifs?: number;
+    motifDisplayDimensions?: { width: number; height: number } | null;
 }
 
 /**
@@ -13,7 +14,7 @@ interface UseMotifLogicOptions {
  * Uses MotifManager service for business logic
  */
 export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
-    const { designBounds, maxMotifs } = options;
+    const { designBounds, maxMotifs, motifDisplayDimensions } = options;
     
     // Create service instance (memoized)
     const motifManager = useMemo(
@@ -42,7 +43,8 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
                 imageUrl,
                 defaultBounds,
                 placedMotifs,
-                fallbackUrl
+                fallbackUrl,
+                motifDisplayDimensions
             );
             setPlacedMotifs(prev => [...prev, newMotif]);
             setSelectedId(newMotif.id);
@@ -89,6 +91,15 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
         setSelectedId(id);
     };
 
+    // Update all motif sizes when tension changes
+    const updateAllMotifSizes = (newDimensions: { width: number; height: number }) => {
+        setPlacedMotifs(prev => 
+            prev.map(motif => 
+                motifManager.updateMotifSize(motif, newDimensions, defaultBounds, prev)
+            )
+        );
+    };
+
     // Delete selected motif on keyboard shortcut
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,6 +121,7 @@ export const useMotifLogic = (options: UseMotifLogicOptions = {}) => {
         updateMotif,
         duplicateMotif,
         deleteMotif,
+        updateAllMotifSizes,
         designBounds: defaultBounds,
         motifCount: placedMotifs.length,
         maxMotifs: motifManager.getMaxMotifs()

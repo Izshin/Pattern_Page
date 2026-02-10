@@ -12,6 +12,11 @@ interface ClothingPreviewProps {
     motifImageUrl?: string | null;
 }
 
+interface MotifDisplayDimensions {
+    width: number;
+    height: number;
+}
+
 /**
  * Refactored ClothingPreview component using clean architecture
  * - Separated concerns: UI components, business logic, and services
@@ -50,7 +55,24 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     // Stage dimensions
     const stageDimensions = dimensionCalculator.getStageDimensions();
 
-    // Motif management hook with design bounds
+    // Calculate motif display dimensions based on tension
+    const motifDisplayDimensions = useMemo<MotifDisplayDimensions | null>(() => {
+        if (!motifSize || !blanketCalc) return null;
+        
+        // Calculate scale factor: pixels per cm
+        const scaleX = blanketCalc.displayWidth / blanketDimensions.width;
+        const scaleY = blanketCalc.displayHeight / blanketDimensions.height;
+        
+        // Use average scale to maintain aspect ratio
+        const scale = (scaleX + scaleY) / 2;
+        
+        return {
+            width: motifSize.widthCm * scale,
+            height: motifSize.heightCm * scale
+        };
+    }, [motifSize, blanketCalc, blanketDimensions]);
+
+    // Motif management hook with design bounds and display dimensions
     const {
         placedMotifs,
         selectedId,
@@ -60,8 +82,9 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         duplicateMotif,
         deleteMotif,
         motifCount,
-        maxMotifs
-    } = useMotifLogic({ designBounds });
+        maxMotifs,
+        updateAllMotifSizes
+    } = useMotifLogic({ designBounds, motifDisplayDimensions });
 
     // Baby blanket image state
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
@@ -77,22 +100,24 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         }
     }, [patternConfig.isBabyBlanket]);
 
-    // Auto-add initial demo motif
+    // Auto-add initial motif only if motifImageUrl is provided
     useEffect(() => {
-        if (!initialized.current) {
+        if (!initialized.current && motifImageUrl) {
             initialized.current = true;
-            // Use motif from URL if provided, with fallback to default
+            // Use motif from URL with fallback to default if it fails to load
             const defaultImage = '/IconsImages/ImageIcon.png';
-            if (motifImageUrl) {
-                // Try custom image with fallback to default
-                addMotif(motifImageUrl, defaultImage);
-            } else {
-                // Use default image directly
-                addMotif(defaultImage);
-            }
+            addMotif(motifImageUrl, defaultImage);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [motifImageUrl]);
+
+    // Update motif sizes when tension changes (affects display dimensions)
+    useEffect(() => {
+        if (motifDisplayDimensions && placedMotifs.length > 0) {
+            updateAllMotifSizes(motifDisplayDimensions);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [motifDisplayDimensions]);
 
     // Deselect motif when clicking outside canvas
     useEffect(() => {

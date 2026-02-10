@@ -6,12 +6,13 @@ interface InfoModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    className?: string;
 }
 
-const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, title, children }) => {
+const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
     return (
         <div className={`modal-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-            <div className="info-modal" onClick={(e) => e.stopPropagation()}>
+            <div className={`info-modal ${className}`} onClick={(e) => e.stopPropagation()}>
                 <button className="modal-close" onClick={onClose}>
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18" />

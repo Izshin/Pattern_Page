@@ -20,7 +20,8 @@ function App() {
   const [chestSize, setChestSize] = useState(2) // 0-5 for sweater sizes
   const [sizeMin, setSizeMin] = useState(60) // Baby blanket width
   const [sizeMax, setSizeMax] = useState(80) // Baby blanket height
-  const [activeModal, setActiveModal] = useState<'tension' | 'chest' | null>(null)
+  const [activeModal, setActiveModal] = useState<'tension' | 'chest' | 'motifError' | null>(null)
+  const [motifErrorMessage, setMotifErrorMessage] = useState<string>('')
   const [pattern, setPattern] = useState<Pattern | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentPattern, setCurrentPattern] = useState<string>('BabyBlanket')
@@ -29,30 +30,49 @@ function App() {
   const [motifSize, setMotifSize] = useState<{ stitches: number; rows: number; widthCm: number; heightCm: number } | null>(null)
   const [motifImageUrl, setMotifImageUrl] = useState<string | null>(null)
   const [motifDimensions, setMotifDimensions] = useState<{ width: number; height: number } | null>(null)
+  
+  // Track previous valid values for reverting on error
+  const previousValues = useRef({ tensionMin: 18, tensionMax: 32, sizeMin: 60, sizeMax: 80 })
 
   // Fixed tension range for all patterns
   const tensionRange = { min: 8, max: 40 };
 
-  // Read pattern from URL on mount and watch for changes
+  // Read pattern and motifId from URL, fetch motif data from external API
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const patternParam = params.get('pattern') || 'BabyBlanket';
     setCurrentPattern(patternParam);
     
-    // Read motif parameters from URL (PrestaShop integration)
-    const motifWidthParam = params.get('motifWidth');
-    const motifHeightParam = params.get('motifHeight');
-    const motifImageParam = params.get('motifImageUrl');
+    // Fetch motif data from external API using motifId
+    const motifId = params.get('motifId');
     
-    if (motifWidthParam && motifHeightParam) {
-      setMotifDimensions({
-        width: parseInt(motifWidthParam, 10),
-        height: parseInt(motifHeightParam, 10)
-      });
-    }
-    
-    if (motifImageParam) {
-      setMotifImageUrl(decodeURIComponent(motifImageParam));
+    if (motifId) {
+      const fetchMotifData = async () => {
+        try {
+          // Fetch motif JSON for width and height
+          const response = await fetch(`https://assets.knittedforyou.com/motif/${motifId}.json`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Set motif dimensions from fetched data
+            if (data.width && data.height) {
+              setMotifDimensions({
+                width: data.width,
+                height: data.height
+              });
+            }
+            
+            // Construct image URL
+            setMotifImageUrl(`https://assets.knittedforyou.com/motif/${motifId}.png`);
+          } else {
+            console.warn(`Failed to fetch motif data for ID: ${motifId}`);
+          }
+        } catch (error) {
+          console.error('Error fetching motif data:', error);
+        }
+      };
+      
+      fetchMotifData();
     }
   }, []);
 
@@ -106,6 +126,14 @@ function App() {
       });
       
       if (result.success) {
+        // Update previous valid values
+        previousValues.current = {
+          tensionMin: knittingTensionMin,
+          tensionMax: knittingTensionMax,
+          sizeMin: sizeMin,
+          sizeMax: sizeMax
+        };
+        
         setAccordionSections(result.sections);
         // Update blanket dimensions from backend calculations
         setBlanketDimensions({
@@ -121,9 +149,31 @@ function App() {
             heightCm: result.calculated.motifHeightCm || 0
           });
         }
+      } else if (result.errors && result.errors.length > 0) {
+        // Motif size error - revert to previous values
+        setKnittingTensionMin(previousValues.current.tensionMin);
+        setKnittingTensionMax(previousValues.current.tensionMax);
+        setSizeMin(previousValues.current.sizeMin);
+        setSizeMax(previousValues.current.sizeMax);
+        
+        // Show error modal
+        setMotifErrorMessage(result.errors.join(' '));
+        setActiveModal('motifError');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to calculate pattern:', error);
+      
+      // Check if this is a motif size error (400 Bad Request)
+      if (error instanceof Error && error.message && error.message.includes('Bad Request')) {
+        // Revert to previous values
+        setKnittingTensionMin(previousValues.current.tensionMin);
+        setKnittingTensionMax(previousValues.current.tensionMax);
+        setSizeMin(previousValues.current.sizeMin);
+        setSizeMax(previousValues.current.sizeMax);
+        
+        setMotifErrorMessage('The motif is too large for the current pattern dimensions. Please adjust the size or tension.');
+        setActiveModal('motifError');
+      }
     }
   };
 
@@ -278,6 +328,17 @@ function App() {
             <p>Choose the size that best matches your measurements for optimal results.</p>
           </>
         )}
+      </InfoModal>
+
+      <InfoModal
+        isOpen={activeModal === 'motifError'}
+        onClose={() => setActiveModal(null)}
+        title="Motif Size Error"
+        className="error-modal"
+      >
+        <h3>Motif too large</h3>
+        <p>{motifErrorMessage}</p>
+        <p>The settings have been reverted to the previous valid configuration. Please try adjusting to smaller dimensions or looser tension.</p>
       </InfoModal>
     </div>
   )

@@ -23,6 +23,8 @@ export const patternAPI = {
     tensionY: number;
     width: number;
     height: number;
+    motifWidth?: number;
+    motifHeight?: number;
   }) {
     const response = await fetch(`${API_BASE_URL}/pattern/calculate`, {
       method: 'POST',
@@ -31,10 +33,19 @@ export const patternAPI = {
       },
       body: JSON.stringify(data),
     });
+    
+    const result = await response.json();
+    
+    // If 400 status, return the error response (with errors array) instead of throwing
+    if (response.status === 400 && result.errors) {
+      return result;
+    }
+    
     if (!response.ok) {
       throw new Error(`Failed to calculate pattern: ${response.statusText}`);
     }
-    return response.json();
+    
+    return result;
   }
 };
 

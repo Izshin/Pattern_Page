@@ -47,7 +47,8 @@ export class MotifManager {
         imageUrl: string,
         designBounds: Bounds,
         existingMotifs: Motif[],
-        fallbackUrl?: string
+        fallbackUrl?: string,
+        displayDimensions?: { width: number; height: number } | null
     ): Promise<Motif> {
         return new Promise((resolve, reject) => {
             const img = new window.Image();
@@ -56,8 +57,10 @@ export class MotifManager {
 
             img.onload = () => {
                 const id = `motif-${Date.now()}`;
-                const width = 100;
-                const height = 100;
+                
+                // Use calculated dimensions if available, otherwise default to 100x100
+                const width = displayDimensions?.width || 100;
+                const height = displayDimensions?.height || 100;
 
                 // Start from center
                 const centerX = designBounds.centerX;
@@ -96,7 +99,7 @@ export class MotifManager {
                 // Try fallback image if provided
                 if (fallbackUrl && fallbackUrl !== imageUrl) {
                     console.warn(`Failed to load motif image: ${imageUrl}, trying fallback: ${fallbackUrl}`);
-                    this.createMotif(fallbackUrl, designBounds, existingMotifs).then(resolve).catch(reject);
+                    this.createMotif(fallbackUrl, designBounds, existingMotifs, undefined, displayDimensions).then(resolve).catch(reject);
                 } else {
                     reject(new Error(`Failed to load motif image: ${imageUrl}`));
                 }
@@ -140,6 +143,57 @@ export class MotifManager {
             id: newId,
             x: safeX,
             y: safeY,
+        };
+    }
+
+    /**
+     * Update motif size based on new display dimensions (e.g., when tension changes)
+     * Maintains position and adjusts if needed to stay within bounds
+     */
+    updateMotifSize(
+        motif: Motif,
+        newDimensions: { width: number; height: number },
+        designBounds: Bounds,
+        _otherMotifs: Motif[]
+    ): Motif {
+        const scaleX = motif.scaleX || 1;
+        const scaleY = motif.scaleY || 1;
+        
+        // Calculate new dimensions
+        const newWidth = newDimensions.width;
+        const newHeight = newDimensions.height;
+        
+        // Calculate actual dimensions with scale
+        const actualWidth = newWidth * scaleX;
+        const actualHeight = newHeight * scaleY;
+        
+        // Adjust position if motif would go out of bounds
+        let newX = motif.x;
+        let newY = motif.y;
+        
+        if (newX + actualWidth > designBounds.right) {
+            newX = designBounds.right - actualWidth;
+        }
+        if (newX < designBounds.left) {
+            newX = designBounds.left;
+        }
+        if (newY + actualHeight > designBounds.bottom) {
+            newY = designBounds.bottom - actualHeight;
+        }
+        if (newY < designBounds.top) {
+            newY = designBounds.top;
+        }
+        
+        // Update stitches based on new dimensions
+        const stitches = this.calculateStitches(newWidth, newHeight);
+        
+        return {
+            ...motif,
+            width: newWidth,
+            height: newHeight,
+            x: newX,
+            y: newY,
+            stitches
         };
     }
 

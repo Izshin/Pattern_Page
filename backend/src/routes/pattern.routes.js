@@ -26,10 +26,12 @@ router.post("/calculate", async (req, res) => {
     try {
         const { patternFile, tensionX, tensionY, width, height, motifWidth, motifHeight } = req.body;
 
-        // Validate inputs
-        if (!patternFile || !tensionX || !tensionY || !width || !height) {
+        // Validate inputs - check for undefined/null, allow 0
+        if (!patternFile || tensionX == null || tensionY == null || width == null || height == null) {
+            console.error('Validation failed:', { patternFile, tensionX, tensionY, width, height });
             return res.status(400).json({
-                error: "Missing required fields: patternFile, tensionX, tensionY, width, height"
+                error: "Missing required fields: patternFile, tensionX, tensionY, width, height",
+                received: { patternFile, tensionX, tensionY, width, height }
             });
         }
 
