@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import './ClothingPreview.css';
 import { ClothingDropdown, PatternCanvas } from './components';
-import { useMotifLogic } from './hooks/useMotifLogicRefactored';
+import { useMotifLogic } from './hooks/useMotifLogic';
 import { usePatternConfig } from './hooks/usePatternConfig';
 import { DimensionCalculator } from './services';
 import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png';

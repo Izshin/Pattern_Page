@@ -10,7 +10,6 @@ interface MotifActionsProps {
     isSelected: boolean;
     onDuplicate?: (id: string) => void;
     onDelete?: (id: string) => void;
-    parentRotation: number;
     canAddMore?: boolean;
 }
 
@@ -20,12 +19,10 @@ export const MotifActions = React.forwardRef<Konva.Group, MotifActionsProps>(({
     isSelected,
     onDuplicate,
     onDelete,
-    parentRotation,    canAddMore = true,}, ref) => {
+    canAddMore = true,
+}, ref) => {
     const [hoveredButton, setHoveredButton] = useState<'copy' | 'delete' | null>(null);
-    // Use the forwarded ref or create a fallback (though in this case we expect a ref)
     const internalRef = useRef<Konva.Group>(null);
-    // We cast to any to handle the conditional ref assignment if needed, but standard practice:
-    // eslint-disable-next-line
     const groupRef = (ref as React.RefObject<Konva.Group>) || internalRef;
 
     const styles = useMotifStyles();
@@ -46,9 +43,6 @@ export const MotifActions = React.forwardRef<Konva.Group, MotifActionsProps>(({
             ref={ref}
             x={motif.width}
             y={0}
-            // Initial rotation via prop. 
-            // During drag, parent will update this node imperatively.
-            rotation={-parentRotation}
         >
             {/* Copy Button */}
             {onDuplicate && canAddMore && (

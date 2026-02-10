@@ -3,7 +3,6 @@ export interface Motif {
     image: HTMLImageElement;
     x: number;
     y: number;
-    rotation?: number;
     scaleX?: number;
     scaleY?: number;
     width: number;

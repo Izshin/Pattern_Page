@@ -55,7 +55,6 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
                 <DraggableMotif
                     key={motif.id}
                     motif={motif}
-                    otherMotifs={motifs.filter(m => m.id !== motif.id)}
                     isSelected={motif.id === selectedId}
                     onSelect={() => onSelectMotif(motif.id)}
                     onChange={onMotifChange}

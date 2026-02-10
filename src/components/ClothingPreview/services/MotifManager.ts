@@ -1,10 +1,8 @@
 import type { Motif } from '../types';
 import { Bounds } from '../models/Bounds';
-import { findClosestValidPosition } from '../../../utils/placement';
 
 interface MotifManagerConfig {
     maxMotifs?: number;
-    collisionPadding?: number;
     stitchSize?: number;
 }
 
@@ -14,12 +12,10 @@ interface MotifManagerConfig {
  */
 export class MotifManager {
     private readonly maxMotifs: number;
-    private readonly collisionPadding: number;
     private readonly stitchSize: number;
 
     constructor(config: MotifManagerConfig = {}) {
         this.maxMotifs = config.maxMotifs ?? 4;
-        this.collisionPadding = config.collisionPadding ?? 25;
         this.stitchSize = config.stitchSize ?? 4;
     }
 
@@ -46,7 +42,6 @@ export class MotifManager {
     async createMotif(
         imageUrl: string,
         designBounds: Bounds,
-        existingMotifs: Motif[],
         fallbackUrl?: string,
         displayDimensions?: { width: number; height: number } | null
     ): Promise<Motif> {
@@ -62,31 +57,17 @@ export class MotifManager {
                 const width = displayDimensions?.width || 100;
                 const height = displayDimensions?.height || 100;
 
-                // Start from center
-                const centerX = designBounds.centerX;
-                const centerY = designBounds.centerY;
-
-                // Find valid position without collisions
-                const { x: validX, y: validY } = findClosestValidPosition(
-                    centerX - width / 2,
-                    centerY - height / 2,
-                    width,
-                    height,
-                    0,
-                    1,
-                    1,
-                    existingMotifs,
-                    designBounds.toObject(),
-                    this.collisionPadding
-                );
+                // Center position
+                const centerX = designBounds.centerX - width / 2;
+                const centerY = designBounds.centerY - height / 2;
 
                 const stitches = this.calculateStitches(width, height);
 
                 const newMotif: Motif = {
                     id,
                     image: img,
-                    x: validX,
-                    y: validY,
+                    x: centerX,
+                    y: centerY,
                     width,
                     height,
                     stitches,
@@ -99,7 +80,7 @@ export class MotifManager {
                 // Try fallback image if provided
                 if (fallbackUrl && fallbackUrl !== imageUrl) {
                     console.warn(`Failed to load motif image: ${imageUrl}, trying fallback: ${fallbackUrl}`);
-                    this.createMotif(fallbackUrl, designBounds, existingMotifs, undefined, displayDimensions).then(resolve).catch(reject);
+                    this.createMotif(fallbackUrl, designBounds, undefined, displayDimensions).then(resolve).catch(reject);
                 } else {
                     reject(new Error(`Failed to load motif image: ${imageUrl}`));
                 }
@@ -112,37 +93,30 @@ export class MotifManager {
      */
     duplicateMotif(
         sourceMotif: Motif,
-        existingMotifs: Motif[],
         designBounds: Bounds
     ): Motif {
         const newId = `motif-${Date.now()}`;
         const offset = 20;
 
-        const startX = sourceMotif.x + offset;
-        const startY = sourceMotif.y + offset;
-
-        const { x: validX, y: validY } = findClosestValidPosition(
-            startX,
-            startY,
-            sourceMotif.width,
-            sourceMotif.height,
-            sourceMotif.rotation || 0,
-            sourceMotif.scaleX || 1,
-            sourceMotif.scaleY || 1,
-            existingMotifs,
-            designBounds.toObject(),
-            this.collisionPadding
-        );
+        let newX = sourceMotif.x + offset;
+        let newY = sourceMotif.y + offset;
 
         // Keep within bounds
-        const safeX = validX > designBounds.right ? designBounds.left : validX;
-        const safeY = validY > designBounds.bottom ? designBounds.top : validY;
+        const actualWidth = sourceMotif.width * (sourceMotif.scaleX || 1);
+        const actualHeight = sourceMotif.height * (sourceMotif.scaleY || 1);
+        
+        if (newX + actualWidth > designBounds.right) {
+            newX = designBounds.left;
+        }
+        if (newY + actualHeight > designBounds.bottom) {
+            newY = designBounds.top;
+        }
 
         return {
             ...sourceMotif,
             id: newId,
-            x: safeX,
-            y: safeY,
+            x: newX,
+            y: newY,
         };
     }
 
@@ -153,8 +127,7 @@ export class MotifManager {
     updateMotifSize(
         motif: Motif,
         newDimensions: { width: number; height: number },
-        designBounds: Bounds,
-        _otherMotifs: Motif[]
+        designBounds: Bounds
     ): Motif {
         const scaleX = motif.scaleX || 1;
         const scaleY = motif.scaleY || 1;
@@ -202,12 +175,5 @@ export class MotifManager {
      */
     getMaxMotifs(): number {
         return this.maxMotifs;
-    }
-
-    /**
-     * Get collision padding
-     */
-    getCollisionPadding(): number {
-        return this.collisionPadding;
     }
 }
