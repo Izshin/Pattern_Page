@@ -7,7 +7,6 @@ interface RectObject {
     y: number;
     width: number;
     height: number;
-    rotation?: number;
     scaleX?: number;
     scaleY?: number;
 }
@@ -33,7 +32,6 @@ export const findClosestValidPosition = (
     startY: number,
     width: number,
     height: number,
-    rotation: number,
     scaleX: number,
     scaleY: number,
     existingMotifs: RectObject[],
@@ -57,7 +55,6 @@ export const findClosestValidPosition = (
             y: checkY + padding,
             width: Math.max(1, width * scaleX - (padding * 2)),
             height: Math.max(1, height * scaleY - (padding * 2)),
-            rotation,
         };
 
         return existingMotifs.some(other => {
@@ -69,7 +66,6 @@ export const findClosestValidPosition = (
                 y: other.y + padding,
                 width: Math.max(1, other.width * oScaleX - (padding * 2)),
                 height: Math.max(1, other.height * oScaleY - (padding * 2)),
-                rotation: other.rotation || 0,
             };
             return checkRectIntersection(currentRect, otherRect);
         });
