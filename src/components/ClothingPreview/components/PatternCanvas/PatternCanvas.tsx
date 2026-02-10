@@ -15,6 +15,7 @@ interface PatternCanvasProps {
     designBounds: Bounds;
     stageDimensions: { width: number; height: number };
     canAddMore: boolean;
+    showBounds?: boolean; // Toggle for bounds visualization
     blanketDisplay?: {
         image: HTMLImageElement;
         x: number;
@@ -40,7 +41,8 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
     designBounds,
     stageDimensions,
     canAddMore,
-    blanketDisplay
+    blanketDisplay,
+    showBounds = true,
 }) => {
     const handleDeselect = (e: { target: { getStage: () => unknown } }) => {
         const clickedOnStage = e.target === e.target.getStage();
@@ -67,6 +69,7 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
                         sweaterBounds={bounds.toObject()}
                         canAddMore={canAddMore}
                         otherMotifs={otherMotifs}
+                        showBounds={showBounds}
                     />
                 );
             })}
@@ -106,16 +109,18 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
                     />
 
                     {/* Blanket bounds visualization */}
-                    <Rect
-                        x={blanketDisplay.bounds.left}
-                        y={blanketDisplay.bounds.top}
-                        width={blanketDisplay.bounds.width}
-                        height={blanketDisplay.bounds.height}
-                        stroke="#FF808A"
-                        strokeWidth={3}
-                        dash={[10, 5]}
-                        listening={false}
-                    />
+                    {showBounds && (
+                        <Rect
+                            x={blanketDisplay.bounds.left}
+                            y={blanketDisplay.bounds.top}
+                            width={blanketDisplay.bounds.width}
+                            height={blanketDisplay.bounds.height}
+                            stroke="#FF808A"
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            listening={false}
+                        />
+                    )}
 
                     {/* Motifs */}
                     {renderMotifs(blanketDisplay.bounds)}
@@ -137,16 +142,18 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
             >
                 <Layer>
                     {/* Design bounds visualization */}
-                    <Rect
-                        x={designBounds.left}
-                        y={designBounds.top}
-                        width={designBounds.width}
-                        height={designBounds.height}
-                        stroke="#FF0000"
-                        strokeWidth={3}
-                        dash={[10, 5]}
-                        listening={false}
-                    />
+                    {showBounds && (
+                        <Rect
+                            x={designBounds.left}
+                            y={designBounds.top}
+                            width={designBounds.width}
+                            height={designBounds.height}
+                            stroke="#FF0000"
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            listening={false}
+                        />
+                    )}
                     
                     {renderMotifs(new Bounds(designBounds.left, designBounds.top, designBounds.right, designBounds.bottom))}
                 </Layer>

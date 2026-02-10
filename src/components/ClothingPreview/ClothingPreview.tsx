@@ -89,6 +89,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     // Baby blanket image state
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [showBounds, setShowBounds] = useState(false); // Toggle for bounds visualization
     const initialized = useRef(false);
 
     // Load baby blanket image
@@ -169,16 +170,29 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                         stageDimensions={stageDimensions}
                         canAddMore={motifCount < maxMotifs}
                         blanketDisplay={blanketDisplay}
+                        showBounds={showBounds}
                     />
                 </div>
-                <div className="motif-size">
-                    <label>Motif size</label>
-                    <div className="size-display">
-                        {motifSize 
-                            ? `${motifSize.stitches} × ${motifSize.rows} stitches (${motifSize.widthCm} × ${motifSize.heightCm} cm)`
-                            : '-- × -- stitches'}
+                {motifImageUrl && (
+                    <div className="motif-size">
+                        <div className="motif-header">
+                            <label>Motif size</label>
+                            <label className="bounds-toggle">
+                                <input 
+                                    type="checkbox" 
+                                    checked={showBounds} 
+                                    onChange={(e) => setShowBounds(e.target.checked)}
+                                />
+                                <span>Show bounds</span>
+                            </label>
+                        </div>
+                        <div className="size-display">
+                            {motifSize 
+                                ? `${motifSize.stitches} × ${motifSize.rows} stitches (${motifSize.widthCm} × ${motifSize.heightCm} cm)`
+                                : '-- × -- stitches'}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </>
     );

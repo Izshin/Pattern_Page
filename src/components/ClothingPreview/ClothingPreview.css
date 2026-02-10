@@ -72,9 +72,33 @@
     gap: 0.25rem;
 }
 
+.motif-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    justify-content: center;
+}
+
 .motif-size label {
     font-size: 2.25rem;
     font-weight: 400;
+}
+
+.bounds-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 400;
+    cursor: pointer;
+    color: #666;
+}
+
+.bounds-toggle input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
 }
 
 .size-display {

@@ -22,6 +22,7 @@ interface DraggableMotifProps {
     };
     canAddMore?: boolean;
     otherMotifs?: Motif[]; // Other motifs for collision detection
+    showBounds?: boolean; // Toggle for bounds visualization
 }
 
 const DraggableMotif: React.FC<DraggableMotifProps> = ({
@@ -34,6 +35,7 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
     sweaterBounds,
     canAddMore = true,
     otherMotifs = [],
+    showBounds = true,
 }) => {
     const groupRef = useRef<Konva.Group>(null);
     const imageRef = useRef<Konva.Image>(null);
@@ -216,15 +218,17 @@ const DraggableMotif: React.FC<DraggableMotifProps> = ({
                 />
 
                 {/* Bounds visualization */}
-                <Rect
-                    x={0}
-                    y={0}
-                    width={motif.width}
-                    height={motif.height}
-                    stroke="#FF808A"
-                    strokeWidth={2}
-                    listening={false}
-                />
+                {showBounds && (
+                    <Rect
+                        x={0}
+                        y={0}
+                        width={motif.width}
+                        height={motif.height}
+                        stroke="#FF808A"
+                        strokeWidth={2}
+                        listening={false}
+                    />
+                )}
 
                 <MotifActions
                     ref={actionsRef}
