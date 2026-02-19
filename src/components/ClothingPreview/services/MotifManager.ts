@@ -55,9 +55,12 @@ export class MotifManager {
             img.onload = () => {
                 const id = `motif-${Date.now()}`;
                 
-                // Use calculated dimensions if available, otherwise default to 100x100
-                const width = displayDimensions?.width || 100;
-                const height = displayDimensions?.height || 100;
+                // Use calculated dimensions if available, otherwise derive a sensible
+                // default that fits inside the design bounds (40% of the smaller side).
+                const boundsMinDim = Math.min(designBounds.width, designBounds.height);
+                const fallbackSize = Math.max(20, Math.floor(boundsMinDim * 0.4));
+                const width = displayDimensions?.width || fallbackSize;
+                const height = displayDimensions?.height || fallbackSize;
 
                 // Start at center position
                 const startX = designBounds.centerX - width / 2;

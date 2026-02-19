@@ -1,45 +1,13 @@
-{body-Width-cm:59}cm.
-{body-length-cm:72} cm.
-The length of the arms from the armhole is {arm-length-armhole-cm} cm.
-The width of the sleeves at the cuff is {arm-length-armhole-cm} cm.
-The width of the sleeves at the top is {arm-length-armhole-cm:41} cm.
-The width of the neck is {arm-length-armhole-cm:16} cm.
-The depth of the neck is {arm-length-armhole-cm:9} cm.
-Wrist ribbing: {arm-length-armhole-cm:5} cm.
-Armhole length {arm-length-armhole-cm:25} cm.
-Back side
-Cast on {cast-on:165} stitches and knit {ribbing-rows:18} rows wrist, p1 k1.
-Knit 151 rows in stockinette.
-Work the armholes and the neckline based on the instructions below.
-Decrease 13 stitches at the beginning and the end of the next row.
-Decrease 1 stitch at the beginning and the end of every row 6 times.
-Knit 61 rows. Move 31 stitches from the middle to a stitch holder.
-Knit each side of the neckline separately.
-* Cast off 1 stitch/stiches every 1:nd row 16 times. Knit 6 rows. Cast off. *
-Work the same ** on the other side of the neckline.
-Frontside
-Cast on 165 stitches and knit 18 rows wrist, 1a, 1r.
-Knit 11 rows in stockinette.
-Work according to your chosen motif in the middle of the garment. Knit 140 rows .
-You have now reached the armhole.. Cast off 13 stitches. Knit 139 stitches and cast off 13 stitches.
-Decrease 1 stitch at the armhole in every row 6 times.
-Knit 40 rows. Now you will knit the neckline. Move 31 stitches from the middle to a stitch holder. Knit each side of the neckline separately.
-* Cast off 2stitch/stitches in the next row. Decrease 1 stitch at the neck every 3:nd row 14 times.
-Cast off remaining stitches.*
-Work the same ** on the other side of the neckline.
-Arms
-Cast on 62 stitches and knit 18 rows wrist, 1a, 1r.
-Cast on 1 stich/stitches evenly spreaded in the next row. Knit in stockinette increasing 1 at the beginning and end of each 7:nd row 26 times.
-Shape the sleeve cap according to the instructions below.
-Decrease 13 stitches at the beginning and the end of the next row.
-Decrease 1 stitch at the beginning and the end of every row 6 times.
-Decrease 1 stitch at the beginning and the end of every 3:nd row 16 times.
-Decrease 1 stitch at the beginning and the end of every row 9 times.
-Decrease 2 stitches at the beginning and the end of every row 3 times.
-Cast off the remaining stitches. Knit the second sleeve in the same way.
-Neckline
-Sew the shoulder seams.
-Transfer the stitches from the stitch holder at the front neckline to a circular needle. Pick up 35 stitches along the right neckline edge, transfer the stitches from the back neckline, and pick up 35 stitches along the left neckline edge. Work in rib stitch around until the neckline measures 3 cm. Cast off in rib stitch. Sew together the sides of the body and the sleeves. Attach the sleeves to the armholes.
-Follow your knitting in the knitting chart below. Click on the row that you knit and it will be highlighted, and the stitches in each color counted for you.
-
-The knitting chart with Line By Line ©
+{
+  "type": "sweater",
+  "defaults": {
+    "slider-tension": { "min": 8, "max": 40, "x": 18, "y": 32 },
+    "body-width-cm": 56,
+    "body-length-cm": 72,
+    "arm-length-armhole-cm": 25,
+    "ribbing-height-cm": 5,
+    "motif-width-stitches": 27,
+    "motif-height-rows": 47
+  },
+  "content": "###SIZE###\nSweater Dimensions:\n• Body width: {body-width-cm} cm\n• Body length: {body-length-cm} cm\n• Arm length from armhole: {arm-length-armhole-cm} cm\n• Gauge: {slider-tension.x} stitches × {slider-tension.y} rows = 10 × 10 cm\n• Motif size: {motif-width-stitches} stitches × {motif-height-rows} rows\n• Motif repeats: {calculated.horizontalRepeats} across × {calculated.verticalRepeats} vertical\n\n###MATERIALS###\n🧵 Skill Level:\nIntermediate – Basic knowledge of colorwork knitting required.\n\n💡 Tip: Place stitch markers around each motif repeat.\n💡 Tip: Swap in any motif you love to personalise your sweater.\n\nYarn:\n• Main color: Approximately 600–900 g depending on size\n• Contrast color: Approximately 100–200 g\n• Needles: 4–4.5 mm\n\nTechniques used:\n• Colorwork (stranded) knitting\n• Rib stitch for cuffs and hem\n\n###INSTRUCTIONS###\nBack side:\nCast on {calculated.castOn} stitches and knit {calculated.ribbingRows} rows of rib stitch (p1 k1).\nKnit in stockinette until body measures {body-length-cm} cm from cast-on edge.\nWork armholes and neckline per standard instructions.\n\nFront side:\nCast on {calculated.castOn} stitches and knit {calculated.ribbingRows} rows of rib stitch (p1 k1).\nWork {calculated.motifStartRows} rows in stockinette, then place motif in the centre:\n{calculated.horizontalRepeats} repeat(s) across × {calculated.verticalRepeats} repeat(s) vertically.\nContinue in stockinette until body measures {body-length-cm} cm.\nWork armholes and neckline per standard instructions.\n\nArms (make 2):\nCast on {calculated.cuffCastOn} stitches. Knit {calculated.ribbingRows} rows rib stitch.\nIncrease 1 stitch each end every 7th row until sleeve is full width.\nShape sleeve cap and cast off remaining stitches.\n\nNeckline:\nSew shoulder seams. Pick up stitches around neckline and knit {ribbing-height-cm} cm rib stitch. Cast off loosely.\n\nFinishing:\nSew side seams. Attach sleeves. Weave in all ends.\n\n###NOTES###\nEnjoy your handmade sweater — designed just for you. 🧶❤️\nHappy Knitting!\n\n• Total body stitches: {calculated.castOn}\n• Ribbing rows: {calculated.ribbingRows}\n• Total body rows: {calculated.totalRows}"
+}

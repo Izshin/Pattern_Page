@@ -1,0 +1,276 @@
+================================================================================
+APP CONTEXT — KnittedForYou Pattern Page
+Task: Adapt Sweater image display and create proper custom bounds for the Sweater
+================================================================================
+
+PROJECT OVERVIEW
+----------------
+React 18 + TypeScript, Vite, react-konva frontend.
+Node.js / Express backend (port 3001).
+The frontend lets users preview a knitting pattern (baby blanket or sweater) on a
+canvas and drag/drop decorative motif images onto it.
+
+KEY FILE PATHS (all relative to project root)
+---------------------------------------------
+src/components/ClothingPreview/ClothingPreview.tsx         — main orchestrator
+src/components/ClothingPreview/components/PatternCanvas/PatternCanvas.tsx  — Konva canvas
+src/components/ClothingPreview/services/DimensionCalculator.ts             — scaling service
+src/components/ClothingPreview/models/Bounds.ts                            — Bounds value object
+src/components/ClothingPreview/models/PatternConfig.ts                     — PatternConfig + PatternType
+src/components/ClothingPreview/hooks/usePatternConfig.ts                   — reads URL ?pattern= param
+src/assets/Patterns/BabybBlanketPatternImage.png                           — baby blanket PNG
+src/assets/Patterns/SweaterPattern.png                                     — sweater PNG (just added)
+
+
+================================================================================
+CURRENT STATE — HOW BABY BLANKET BOUNDS WORK (working correctly)
+================================================================================
+
+DimensionCalculator is instantiated in ClothingPreview with containerHeight: 390.
+
+constructor defaults:
+  containerWidth:  400
+  containerHeight: 390  (overridden)
+  padding:          20
+  maxSize:         140
+  ribbonSize:        5  (cm — decorative border stripped from motif area)
+
+calculate(actualDimensions: { width, height }) flow:
+  availableWidth  = containerWidth  - padding*2  = 360
+  availableHeight = containerHeight - padding*2  = 350
+
+  scaleX = availableWidth  / maxSize  = 360 / 140 ≈ 2.571
+  scaleY = availableHeight / maxSize  = 350 / 140 = 2.5
+  scale  = min(scaleX, scaleY)        = 2.5
+
+  For baby blanket (width:60, height:80):
+    displayWidth  = 60 * 2.5 = 150 px
+    displayHeight = 80 * 2.5 = 200 px
+
+    x = 20 + (360 - 150) / 2 = 20 + 105 = 125 px   (centered horizontally)
+    y = 20 + (350 - 200) / 2 = 20 + 75  =  95 px   (centered vertically)
+
+  ribbonOffsetX = (5 / 60) * 150 ≈ 12.5 px
+  ribbonOffsetY = (5 / 80) * 200 ≈ 12.5 px
+
+  Bounds (the motif-droppable area) = Bounds(
+    left:   125 + 12.5 = 137.5
+    top:     95 + 12.5 = 107.5
+    right:  125 + 150 - 12.5 = 262.5
+    bottom:  95 + 200 - 12.5 = 282.5
+  )
+
+The bounds rectangle sits INSIDE the displayed image, inset by the ribbon border.
+This makes motifs land only on the knittable inner area.
+
+Stage dimensions: { width: 400, height: 390 }
+
+
+================================================================================
+CURRENT STATE — HOW SWEATER IS HANDLED (BROKEN / PLACEHOLDER)
+================================================================================
+
+In ClothingPreview.tsx:
+
+  // sweaterCalc reuses the SAME DimensionCalculator.calculate() call
+  // but passes blanketDimensions (default { width: 60, height: 80 })
+  // This gives the sweater image identical positioning to a 60×80 blanket,
+  // which is WRONG — the sweater PNG is not a rectangle and its knittable
+  // body area does not start at a uniform ribbon-offset from all edges.
+
+  const sweaterCalc = useMemo(() => {
+      if (patternConfig.isBabyBlanket) return null;
+      return dimensionCalculator.calculate(blanketDimensions);   // <-- uses blanket dims
+  }, [patternConfig.isBabyBlanket, dimensionCalculator, blanketDimensions]);
+
+  const sweaterDisplay = useMemo(() => {
+      if (patternConfig.isBabyBlanket || !sweaterImage || !sweaterCalc) return undefined;
+      return {
+          image:  sweaterImage,
+          x:      sweaterCalc.x,
+          y:      sweaterCalc.y,
+          width:  sweaterCalc.displayWidth,
+          height: sweaterCalc.displayHeight,
+          bounds: sweaterCalc.bounds       // <-- bounds based on blanket ribbon math, wrong for sweater
+      };
+  }, [patternConfig.isBabyBlanket, sweaterImage, sweaterCalc]);
+
+In PatternCanvas.tsx the sweater branch renders:
+  <KonvaImage image x y width height />       — the sweater PNG scaled by sweaterCalc
+  <Rect bounds ... />                          — debug bounds rect (wrong area)
+  {renderMotifs(sweaterDisplay.bounds)}        — motifs constrained to wrong area
+
+PROBLEM SUMMARY:
+The sweater PNG is shaped like a sweater (T-shape). Its sleeves, collar, and body
+are all visible. The motif-droppable area should cover only the BODY of the sweater
+(the large rectangular torso section), NOT the sleeves or collar.
+The current ribbon-based bounds math from blanket does not achieve this.
+
+
+================================================================================
+WHAT NEEDS TO BE DONE
+================================================================================
+
+GOAL: Define custom pixel bounds for the SweaterPattern.png that map to its
+body/torso area, independent of the blanket ribbon formula.
+
+APPROACH 1 — Hardcoded pixel fractions (recommended for now):
+  After the sweater image is scaled and positioned on the canvas, compute bounds
+  as fixed fractions of the displayed image's width/height.
+
+  e.g.:
+    sweater body starts at ~30% from top, ends at ~85% from top
+    sweater body starts at ~20% from left, ends at ~80% from right
+
+  These percentages must be measured against the actual SweaterPattern.png pixel
+  dimensions. You (the AI) should inspect the image or ask the developer to
+  measure the body rectangle in pixels then compute the fractions.
+
+  Implementation sketch in ClothingPreview.tsx:
+    const sweaterDisplay = useMemo(() => {
+        if (patternConfig.isBabyBlanket || !sweaterImage || !sweaterCalc) return undefined;
+
+        const imgX = sweaterCalc.x;
+        const imgY = sweaterCalc.y;
+        const imgW = sweaterCalc.displayWidth;
+        const imgH = sweaterCalc.displayHeight;
+
+        // Replace these fractions with measured values from the PNG:
+        const bodyLeft   = imgX + imgW * 0.20;
+        const bodyTop    = imgY + imgH * 0.30;
+        const bodyRight  = imgX + imgW * 0.80;
+        const bodyBottom = imgY + imgH * 0.85;
+
+        const bodyBounds = new Bounds(bodyLeft, bodyTop, bodyRight, bodyBottom);
+        // (import Bounds from '../../models/Bounds')
+
+        return {
+            image:  sweaterImage,
+            x:      imgX,
+            y:      imgY,
+            width:  imgW,
+            height: imgH,
+            bounds: bodyBounds          // <-- custom, not sweaterCalc.bounds
+        };
+    }, [patternConfig.isBabyBlanket, sweaterImage, sweaterCalc]);
+
+APPROACH 2 — New SweaterDimensionCalculator or factory method:
+  Add a static method to DimensionCalculator:
+    static calculateSweaterBounds(x, y, displayWidth, displayHeight): Bounds
+  with the same fraction logic centralised in the service layer.
+
+APPROACH 3 — Config-driven bounds per PatternType:
+  Store body-fraction constants in PatternConfig per type:
+    case PatternType.SWEATER:
+      return { bodyFractions: { left: 0.20, top: 0.30, right: 0.80, bottom: 0.85 } };
+  Then DimensionCalculator.calculate() reads these fractions to produce the bounds.
+
+The developer must measure the actual body area of SweaterPattern.png to fill in
+the correct fraction values. The file lives at:
+  src/assets/Patterns/SweaterPattern.png
+
+
+================================================================================
+RELEVANT CODE SNIPPETS — FULL FILE SUMMARIES
+================================================================================
+
+--- Bounds.ts ---
+class Bounds {
+  constructor(left, top, right, bottom)
+  get width()   // right - left
+  get height()  // bottom - top
+  get centerX() // midpoint
+  get centerY() // midpoint
+  contains(x, y, width, height): boolean  // used for motif collision
+  static fromDimensions(x, y, width, height): Bounds
+  toObject(): { left, top, right, bottom }
+}
+
+--- PatternConfig.ts ---
+PatternType enum values: BABY_BLANKET, HAT, SCARF, SWEATER, MITTENS, BAG
+PatternConfig.fromUrl() — reads ?pattern= from URL
+PatternConfig.isBabyBlanket — true only for BABY_BLANKET
+PatternConfig.getDefaultDimensions(type) — returns {width,height} per type
+  currently only BABY_BLANKET returns {60,80}; all others return {100,100}
+
+--- DimensionCalculator.ts ---
+constructor({ containerWidth=400, containerHeight=500, padding=20, maxSize=140, ribbonSize=5 })
+calculate(actualDimensions): { displayWidth, displayHeight, x, y, bounds }
+getDefaultDesignBounds(): Bounds(50,50,350,350)
+getStageDimensions(): { width, height }
+
+--- PatternCanvas.tsx prop interface ---
+interface PatternCanvasProps {
+  isBabyBlanket: boolean;
+  motifs: Motif[];
+  selectedId: string | null;
+  onSelectMotif, onMotifChange, onMotifDuplicate, onMotifDelete
+  designBounds: Bounds;
+  stageDimensions: { width: number; height: number };
+  canAddMore: boolean;
+  showBounds?: boolean;
+  blanketDisplay?: { image, x, y, width, height, bounds }
+  sweaterDisplay?: { image, x, y, width, height, bounds }
+}
+
+--- PatternCanvas.tsx render logic (abbreviated) ---
+if (isBabyBlanket && blanketDisplay)  → render blanket KonvaImage + bounds rect + motifs
+if (!isBabyBlanket && sweaterDisplay) → render sweater KonvaImage + bounds rect + motifs
+fallback                              → empty Stage
+
+--- ClothingPreview.tsx motif display size (blanket only, sweater not yet adapted) ---
+motifDisplayDimensions is computed from blanketCalc scale only:
+  const scaleX = blanketCalc.displayWidth  / blanketDimensions.width;
+  const scaleY = blanketCalc.displayHeight / blanketDimensions.height;
+  const scale  = (scaleX + scaleY) / 2;
+  return { width: motifSize.widthCm * scale, height: motifSize.heightCm * scale };
+
+NOTE: For sweater, motifDisplayDimensions is null (blanketCalc is null when !isBabyBlanket).
+This means motif size based on tension sliders does NOT work for sweater yet.
+This is a SECONDARY issue to fix after bounds are correct.
+
+
+================================================================================
+SECONDARY TASK (after bounds): motifDisplayDimensions for sweater
+================================================================================
+
+Currently:
+  const motifDisplayDimensions = useMemo(() => {
+      if (!motifSize || !blanketCalc) return null;   // returns null for sweater
+      ...
+  });
+
+Fix: when sweater, use sweaterCalc instead of blanketCalc:
+  const motifDisplayDimensions = useMemo(() => {
+      if (!motifSize) return null;
+      const calc = blanketCalc ?? sweaterCalc;
+      if (!calc) return null;
+      const dims = patternConfig.isBabyBlanket ? blanketDimensions : { width: 100, height: 100 };
+      const scaleX = calc.displayWidth  / dims.width;
+      const scaleY = calc.displayHeight / dims.height;
+      const scale  = (scaleX + scaleY) / 2;
+      return { width: motifSize.widthCm * scale, height: motifSize.heightCm * scale };
+  }, [motifSize, blanketCalc, sweaterCalc, patternConfig.isBabyBlanket, blanketDimensions]);
+
+
+================================================================================
+CANVAS COORDINATES — reference numbers
+================================================================================
+Stage:          400 px wide × 390 px tall
+Padding:         20 px on all sides
+Available area: 360 × 350 px
+
+When sweaterCalc uses blanketDimensions {width:60, height:80}:
+  displayWidth  = 150 px
+  displayHeight = 200 px
+  x (top-left corner of image on canvas) = 125 px
+  y (top-left corner of image on canvas) =  95 px
+
+SweaterPattern.png is rendered at those coords and that size.
+The developer must open the image and determine where the sweater BODY starts/ends
+within the 150×200 rendered area to define accurate bodyLeft/Top/Right/Bottom.
+
+
+================================================================================
+END OF CONTEXT
+================================================================================

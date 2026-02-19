@@ -44,8 +44,19 @@ router.post("/calculate", async (req, res) => {
         // Update pattern with user inputs
         patternData.defaults["slider-tension"].x = Number(tensionX);
         patternData.defaults["slider-tension"].y = Number(tensionY);
-        patternData.defaults["width-cm"] = Number(width);
-        patternData.defaults["height-cm"] = Number(height);
+
+        // Baby blanket uses width-cm / height-cm; sweater uses body-width-cm / body-length-cm;
+        // hat uses head-circumference-cm / hat-height-cm.
+        if (patternData.type === 'sweater') {
+            patternData.defaults["body-width-cm"]        = Number(width);
+            patternData.defaults["body-length-cm"]       = Number(height);
+        } else if (patternData.type === 'hat') {
+            patternData.defaults["head-circumference-cm"] = Number(width);
+            patternData.defaults["hat-height-cm"]         = Number(height);
+        } else {
+            patternData.defaults["width-cm"]  = Number(width);
+            patternData.defaults["height-cm"] = Number(height);
+        }
         
         // Override motif dimensions if provided from URL (PrestaShop integration)
         if (motifWidth && motifHeight) {

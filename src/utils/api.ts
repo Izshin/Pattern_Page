@@ -25,6 +25,9 @@ export const patternAPI = {
     height: number;
     motifWidth?: number;
     motifHeight?: number;
+    /** Pass motifId when no stitch-count dims are available — tells the backend to
+     *  keep the .pat file's default motif-width-stitches / motif-height-rows. */
+    motifId?: string | null;
   }) {
     const response = await fetch(`${API_BASE_URL}/pattern/calculate`, {
       method: 'POST',

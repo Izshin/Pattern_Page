@@ -30,6 +30,10 @@ export class PatternConfig {
         return this.type === PatternType.BABY_BLANKET;
     }
 
+    get isHat(): boolean {
+        return this.type === PatternType.HAT;
+    }
+
     static fromUrl(): PatternConfig {
         const urlParams = new URLSearchParams(window.location.search);
         const patternParam = urlParams.get('pattern') || 'BabyBlanket';

@@ -5,6 +5,7 @@ import { Bounds } from '../../models';
 
 interface PatternCanvasProps {
     isBabyBlanket: boolean;
+    isHat?: boolean;
     motifs: Motif[];
     selectedId: string | null;
     onSelectMotif: (id: string | null) => void;
@@ -31,6 +32,14 @@ interface PatternCanvasProps {
         height: number;
         bounds: Bounds;
     };
+    hatDisplay?: {
+        image: HTMLImageElement;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        bounds: Bounds;
+    };
 }
 
 /**
@@ -39,6 +48,7 @@ interface PatternCanvasProps {
  */
 export const PatternCanvas: React.FC<PatternCanvasProps> = ({
     isBabyBlanket,
+    isHat = false,
     motifs,
     selectedId,
     onSelectMotif,
@@ -50,6 +60,7 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
     canAddMore,
     blanketDisplay,
     sweaterDisplay,
+    hatDisplay,
     showBounds = true,
 }) => {
     const handleDeselect = (e: { target: { getStage: () => unknown } }) => {
@@ -174,7 +185,44 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
         );
     }
 
-    // Sweater fallback (no image loaded yet)
+    // Hat view
+    if (isHat && hatDisplay) {
+        return (
+            <Stage
+                width={stageDimensions.width}
+                height={stageDimensions.height}
+                onMouseDown={handleDeselect}
+                onTouchStart={handleDeselect}
+                className="motif-stage blanket-stage"
+            >
+                <Layer>
+                    <KonvaImage
+                        image={hatDisplay.image}
+                        x={hatDisplay.x}
+                        y={hatDisplay.y}
+                        width={hatDisplay.width}
+                        height={hatDisplay.height}
+                        listening={false}
+                    />
+                    {showBounds && (
+                        <Rect
+                            x={hatDisplay.bounds.left}
+                            y={hatDisplay.bounds.top}
+                            width={hatDisplay.bounds.width}
+                            height={hatDisplay.bounds.height}
+                            stroke="#FF808A"
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            listening={false}
+                        />
+                    )}
+                    {renderMotifs(hatDisplay.bounds)}
+                </Layer>
+            </Stage>
+        );
+    }
+
+    // Fallback (no image loaded yet)
     return (
         <Stage
             width={stageDimensions.width}
