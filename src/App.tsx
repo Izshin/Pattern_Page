@@ -100,7 +100,7 @@ function App() {
     loadPattern();
   }, [currentPattern]);
 
-  // Calculate pattern whenever sliders change (for baby blanket)
+  // Calculate pattern whenever sliders change or motif dimensions load (for baby blanket)
   useEffect(() => {
     if (currentPattern === 'BabyBlanket' && !loading) {
       const debounce = setTimeout(() => {
@@ -109,7 +109,7 @@ function App() {
       
       return () => clearTimeout(debounce);
     }
-  }, [knittingTensionMin, knittingTensionMax, sizeMin, sizeMax, currentPattern, loading]);
+  }, [knittingTensionMin, knittingTensionMax, sizeMin, sizeMax, currentPattern, loading, motifDimensions]);
 
   const calculateBabyBlanketPattern = async () => {
     try {

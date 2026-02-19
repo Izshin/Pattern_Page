@@ -117,16 +117,18 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         }
     }, [patternConfig.isBabyBlanket]);
 
-    // Auto-add initial motif only if motifImageUrl is provided
+    // Auto-add initial motif only once both the image URL and display dimensions are ready.
+    // Waiting for motifDisplayDimensions ensures the motif is created at the correct size
+    // immediately, without requiring a slider interaction to trigger a resize.
     useEffect(() => {
-        if (!initialized.current && motifImageUrl) {
+        if (!initialized.current && motifImageUrl && motifDisplayDimensions) {
             initialized.current = true;
             // Use motif from URL with fallback to default if it fails to load
             const defaultImage = '/IconsImages/ImageIcon.png';
             addMotif(motifImageUrl, defaultImage);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [motifImageUrl]);
+    }, [motifImageUrl, motifDisplayDimensions]);
 
     // Update motif sizes when tension changes (affects display dimensions)
     useEffect(() => {

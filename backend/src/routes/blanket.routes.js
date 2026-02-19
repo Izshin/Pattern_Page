@@ -1,5 +1,5 @@
 import express from "express";
-import { solvePattern } from "../services/patternCalculator.js";
+import { solvePattern } from "../services/patternCalculations/patternCalculator.js";
 
 const router = express.Router();
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { loadPatternDefaults } from "../services/patternDefaults.js";
+import { loadPatternDefaults } from "../services/patternCalculations/patternDefaults.js";
 
 export async function resize(req, res) {
   try {

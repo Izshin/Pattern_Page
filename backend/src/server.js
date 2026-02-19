@@ -4,6 +4,7 @@ import patterns from "./routes/patterns.routes.js";
 import resize from "./routes/resize.routes.js";
 import blanket from "./routes/blanket.routes.js";
 import pattern from "./routes/pattern.routes.js";
+import pdfMaker from "./routes/pdfMaker.route.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/patterns", patterns);
 app.use("/resize", resize);
 app.use("/blanket", blanket);
 app.use("/pattern", pattern);
+app.use("/pdf", pdfMaker);
 
 app.listen(3001, () => {
   console.log("Server running on port 3001");
