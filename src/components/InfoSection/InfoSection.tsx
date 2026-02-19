@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import './InfoSection.css';
 import DownloadIcon from '../../assets/Logos/DownloadIcon.svg?react';
 import EditIcon from '../../assets/Logos/EditIcon.svg?react';
@@ -12,6 +12,8 @@ interface InfoSectionProps {
     accordionSections?: any[];
     isBabyBlanket?: boolean;
     hasMotif?: boolean;
+    motifId?: string | null;
+    onScrollToInfo?: () => void;
 }
 
 // Default data for sweater (fallback)
@@ -128,23 +130,63 @@ const ACCORDION_DATA = [
     }
 ];
 
-const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloatingButtons, accordionSections, isBabyBlanket, hasMotif = true }, ref) => {
-    const [openAccordions, setOpenAccordions] = useState<Set<number>>(new Set());
+const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloatingButtons, accordionSections, isBabyBlanket, hasMotif = true, motifId, onScrollToInfo }, ref) => {
+    const [openAccordions, setOpenAccordions] = useState<Set<number>>(new Set([0]));
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isNearTop, setIsNearTop] = useState(true);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsNearTop(window.scrollY / document.body.scrollHeight < 0.3);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const handleCombinedButton = () => {
+        if (isNearTop && onScrollToInfo) {
+            setOpenAccordions(new Set([0]));
+            onScrollToInfo();
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!motifId || isDownloading) return;
+        setIsDownloading(true);
+        try {
+            const res = await fetch('http://localhost:3001/pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motifId })
+            });
+            if (!res.ok) throw new Error('PDF generation failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `motif-${motifId}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('PDF download error:', err);
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const toggleAccordion = (index: number) => {
-        const newOpenAccordions = new Set<number>();
-        // Only allow one open at a time logic if desired, but code implies multiple can be open or single. 
-        // Original logic: if not has index, add it (clearing others). Wait, original logic:
-        // const newOpenAccordions = new Set<number>(); if (!has) add. set(new). 
-        // This effectively made it an accordion where only one or zero can be open? 
-        // Wait, "new Set<number>()" creates empty. So yes, replaces state.
-        // It toggles: if open, close it (empty set). If closed, open it (set with one ID).
-        // It seems it enforced single open item behavior inherently by creating a fresh set every time.
-
-        if (!openAccordions.has(index)) {
-            newOpenAccordions.add(index);
-        }
-        setOpenAccordions(newOpenAccordions);
+        setOpenAccordions(prev => {
+            const next = new Set(prev);
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
     };
 
     // Use dynamic accordion sections for baby blanket, fallback to default for sweater
@@ -218,6 +260,7 @@ const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloating
             </div>
 
             <div className={`floating-actions ${showFloatingButtons ? 'visible' : ''}`}>
+                {motifId && (
                 <div className="action-button-wrapper download-wrapper">
                     <div className="download-tooltip">
                         <div className="tooltip-header">
@@ -226,14 +269,20 @@ const InfoSection = forwardRef<HTMLDivElement, InfoSectionProps>(({ showFloating
                         </div>
                         <p>Pro tip: The PDF is locked to the specific settings provided. Stick to the interactive guide above if you want instructions that adapt as you work.</p>
                     </div>
-                    <button className="action-button download-button" aria-label="Download PDF">
-                        <DownloadIcon />
+                    <button
+                        className="action-button download-button"
+                        aria-label="Download PDF"
+                        onClick={handleDownloadPdf}
+                        disabled={isDownloading}
+                    >
+                        {isDownloading ? '…' : <DownloadIcon />}
                     </button>
                 </div>
+                )}
                 <button
                     className="action-button combined-button"
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    aria-label="Edit and Scroll to Top"
+                    onClick={handleCombinedButton}
+                    aria-label={isNearTop ? 'Preview Instructions' : 'Scroll to Top'}
                 >
                     <EditIcon />
                     <div className="vertical-divider"></div>

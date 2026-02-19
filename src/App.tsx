@@ -30,6 +30,7 @@ function App() {
   const [motifSize, setMotifSize] = useState<{ stitches: number; rows: number; widthCm: number; heightCm: number } | null>(null)
   const [motifImageUrl, setMotifImageUrl] = useState<string | null>(null)
   const [motifDimensions, setMotifDimensions] = useState<{ width: number; height: number } | null>(null)
+  const [motifId, setMotifId] = useState<string | null>(null)
   
   // Track previous valid values for reverting on error
   const previousValues = useRef({ tensionMin: 18, tensionMax: 32, sizeMin: 60, sizeMax: 80 })
@@ -44,9 +45,11 @@ function App() {
     setCurrentPattern(patternParam);
     
     // Fetch motif data from external API using motifId
-    const motifId = params.get('motifId');
+    const motifIdParam = params.get('motifId');
+    if (motifIdParam) setMotifId(motifIdParam);
     
-    if (motifId) {
+    if (motifIdParam) {
+      const motifId = motifIdParam;
       const fetchMotifData = async () => {
         try {
           // Fetch motif JSON for width and height
@@ -305,6 +308,8 @@ function App() {
           accordionSections={accordionSections}
           isBabyBlanket={isBabyBlanket}
           hasMotif={motifImageUrl !== null}
+          motifId={motifId}
+          onScrollToInfo={scrollToInfo}
         />
       )}
 
