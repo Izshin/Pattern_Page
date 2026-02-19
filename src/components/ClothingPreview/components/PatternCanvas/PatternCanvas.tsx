@@ -1,5 +1,4 @@
 import { Stage, Layer, Group, Image as KonvaImage, Rect } from 'react-konva';
-import SweaterIcon from '../../../../assets/Logos/SweaterIcon.svg?react';
 import DraggableMotif from '../../Motif/DraggableMotif';
 import type { Motif } from '../../types';
 import { Bounds } from '../../models';
@@ -17,6 +16,14 @@ interface PatternCanvasProps {
     canAddMore: boolean;
     showBounds?: boolean; // Toggle for bounds visualization
     blanketDisplay?: {
+        image: HTMLImageElement;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        bounds: Bounds;
+    };
+    sweaterDisplay?: {
         image: HTMLImageElement;
         x: number;
         y: number;
@@ -42,6 +49,7 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
     stageDimensions,
     canAddMore,
     blanketDisplay,
+    sweaterDisplay,
     showBounds = true,
 }) => {
     const handleDeselect = (e: { target: { getStage: () => unknown } }) => {
@@ -129,35 +137,67 @@ export const PatternCanvas: React.FC<PatternCanvasProps> = ({
         );
     }
 
-    // Sweater view
-    return (
-        <>
-            <SweaterIcon className="sweater-base" />
+    // Sweater view with image
+    if (!isBabyBlanket && sweaterDisplay) {
+        return (
             <Stage
                 width={stageDimensions.width}
                 height={stageDimensions.height}
                 onMouseDown={handleDeselect}
                 onTouchStart={handleDeselect}
-                className="motif-stage"
+                className="motif-stage blanket-stage"
             >
                 <Layer>
-                    {/* Design bounds visualization */}
+                    <KonvaImage
+                        image={sweaterDisplay.image}
+                        x={sweaterDisplay.x}
+                        y={sweaterDisplay.y}
+                        width={sweaterDisplay.width}
+                        height={sweaterDisplay.height}
+                        listening={false}
+                    />
                     {showBounds && (
                         <Rect
-                            x={designBounds.left}
-                            y={designBounds.top}
-                            width={designBounds.width}
-                            height={designBounds.height}
-                            stroke="#FF0000"
+                            x={sweaterDisplay.bounds.left}
+                            y={sweaterDisplay.bounds.top}
+                            width={sweaterDisplay.bounds.width}
+                            height={sweaterDisplay.bounds.height}
+                            stroke="#FF808A"
                             strokeWidth={3}
                             dash={[10, 5]}
                             listening={false}
                         />
                     )}
-                    
-                    {renderMotifs(new Bounds(designBounds.left, designBounds.top, designBounds.right, designBounds.bottom))}
+                    {renderMotifs(sweaterDisplay.bounds)}
                 </Layer>
             </Stage>
-        </>
+        );
+    }
+
+    // Sweater fallback (no image loaded yet)
+    return (
+        <Stage
+            width={stageDimensions.width}
+            height={stageDimensions.height}
+            onMouseDown={handleDeselect}
+            onTouchStart={handleDeselect}
+            className="motif-stage"
+        >
+            <Layer>
+                {showBounds && (
+                    <Rect
+                        x={designBounds.left}
+                        y={designBounds.top}
+                        width={designBounds.width}
+                        height={designBounds.height}
+                        stroke="#FF0000"
+                        strokeWidth={3}
+                        dash={[10, 5]}
+                        listening={false}
+                    />
+                )}
+                {renderMotifs(new Bounds(designBounds.left, designBounds.top, designBounds.right, designBounds.bottom))}
+            </Layer>
+        </Stage>
     );
 };

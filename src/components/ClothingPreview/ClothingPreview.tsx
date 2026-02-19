@@ -5,6 +5,7 @@ import { useMotifLogic } from './hooks/useMotifLogic';
 import { usePatternConfig } from './hooks/usePatternConfig';
 import { DimensionCalculator } from './services';
 import BabyBlanketImage from '../../assets/Patterns/BabybBlanketPatternImage.png';
+import SweaterPatternImage from '../../assets/Patterns/SweaterPattern.png';
 import InfoModal from '../Modal/InfoModal';
 
 interface ClothingPreviewProps {
@@ -49,13 +50,18 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         );
     }, [patternConfig, dimensionCalculator, blanketDimensions]);
 
+    // Calculate display dimensions for sweater (uses same bounds logic as blanket)
+    const sweaterCalc = useMemo(() => {
+        if (patternConfig.isBabyBlanket) return null;
+        return dimensionCalculator.calculate(blanketDimensions);
+    }, [patternConfig.isBabyBlanket, dimensionCalculator, blanketDimensions]);
+
     // Design bounds based on pattern type
     const designBounds = useMemo(() => {
-        if (blanketCalc) {
-            return blanketCalc.bounds;
-        }
+        if (blanketCalc) return blanketCalc.bounds;
+        if (sweaterCalc) return sweaterCalc.bounds;
         return dimensionCalculator.getDefaultDesignBounds();
-    }, [blanketCalc, dimensionCalculator]);
+    }, [blanketCalc, sweaterCalc, dimensionCalculator]);
 
     // Stage dimensions
     const stageDimensions = dimensionCalculator.getStageDimensions();
@@ -102,6 +108,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
 
     // Baby blanket image state
     const [blanketImage, setBlanketImage] = useState<HTMLImageElement | null>(null);
+    const [sweaterImage, setSweaterImage] = useState<HTMLImageElement | null>(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showBounds, setShowBounds] = useState(false); // Toggle for bounds visualization
     const [isNoSpaceModalOpen, setIsNoSpaceModalOpen] = useState(false);
@@ -114,6 +121,15 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
             const img = new window.Image();
             img.src = BabyBlanketImage;
             img.onload = () => setBlanketImage(img);
+        }
+    }, [patternConfig.isBabyBlanket]);
+
+    // Load sweater image
+    useEffect(() => {
+        if (!patternConfig.isBabyBlanket) {
+            const img = new window.Image();
+            img.src = SweaterPatternImage;
+            img.onload = () => setSweaterImage(img);
         }
     }, [patternConfig.isBabyBlanket]);
 
@@ -161,7 +177,6 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
         if (!patternConfig.isBabyBlanket || !blanketImage || !blanketCalc) {
             return undefined;
         }
-
         return {
             image: blanketImage,
             x: blanketCalc.x,
@@ -171,6 +186,21 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
             bounds: blanketCalc.bounds
         };
     }, [patternConfig.isBabyBlanket, blanketImage, blanketCalc]);
+
+    // Prepare sweater display data (same structure as blanket)
+    const sweaterDisplay = useMemo(() => {
+        if (patternConfig.isBabyBlanket || !sweaterImage || !sweaterCalc) {
+            return undefined;
+        }
+        return {
+            image: sweaterImage,
+            x: sweaterCalc.x,
+            y: sweaterCalc.y,
+            width: sweaterCalc.displayWidth,
+            height: sweaterCalc.displayHeight,
+            bounds: sweaterCalc.bounds
+        };
+    }, [patternConfig.isBabyBlanket, sweaterImage, sweaterCalc]);
 
     return (
         <>
@@ -244,6 +274,7 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
                         stageDimensions={stageDimensions}
                         canAddMore={motifCount < maxMotifs}
                         blanketDisplay={blanketDisplay}
+                        sweaterDisplay={sweaterDisplay}
                         showBounds={showBounds}
                     />
                 </div>
