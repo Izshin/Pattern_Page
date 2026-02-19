@@ -281,8 +281,9 @@ function drawChart(
 ) {
   // Scale ruler font to the box size so numbers never overflow their cell
   const rulerFontSize = Math.max(4, Math.min(8, boxHeight));
-  // Approximate half-width of a single digit at this font size (PDFKit uses ~0.5× ratio)
-  const digitHalfW = rulerFontSize * 0.25;
+  // Label every Nth column/row so numbers never crowd or wrap.
+  // At large box sizes label every cell; shrink the interval as cells get smaller.
+  const labelInterval = boxWidth >= 8 ? 2 : 3;
 
   //---------------------- Draw rows ----------------------
   rows.forEach((row) => {
@@ -298,39 +299,33 @@ function drawChart(
 
       // Draw each pixel block
       for (let i = 0; i < count; i++) {
-        doc.rect(x, y, boxWidth, boxHeight).fillAndStroke(fillColor, "#ccc"); // default border color
+        doc.rect(x, y, boxWidth, boxHeight).fillAndStroke(fillColor, "#ccc");
         x += boxWidth;
       }
     });
 
     //---------------------- Draw row ruler ----------------------
-    // Vertically centre the label within the box; lineBreak: false prevents page jumps
-    const rowLabel = String(height - row.index);
-    doc
-      .fillColor("black")
-      .fontSize(rulerFontSize)
-      .text(rowLabel, x + 2, y + (boxHeight - rulerFontSize) / 2, { lineBreak: false });
+    const rowNumber = height - row.index;
+    if (rowNumber % labelInterval === 0 || rowNumber === 1 || rowNumber === height) {
+      doc
+        .fillColor("black")
+        .fontSize(rulerFontSize)
+        .text(String(rowNumber), x + 2, y + (boxHeight - rulerFontSize) / 2, { lineBreak: false });
+    }
   });
 
   //---------------------- Draw column rulers ----------------------
-  // Render each digit at the horizontal centre of its column cell.
-  // Using lineBreak: false and no width constraint prevents PDFKit from
-  // wrapping text and inserting unwanted new lines / page breaks.
+  // Only label every Nth column so numbers fit without wrapping or colliding.
+  // All text uses lineBreak: false and explicit absolute coordinates to prevent
+  // PDFKit's flow engine from inserting unwanted line/page breaks.
+  doc.fillColor("black").fontSize(rulerFontSize);
   for (let col = 0; col < width; col++) {
     const number = width - col;
-    // Centre x of this column cell
-    const cx = startX + col * boxWidth + boxWidth / 2 - digitHalfW;
+    if (number % labelInterval !== 0 && number !== 1 && number !== width) continue;
 
-    doc.fillColor("black").fontSize(rulerFontSize);
-
-    if (number < 10) {
-      doc.text(String(number), cx, rulerYTop, { lineBreak: false });
-    } else {
-      const tens = Math.floor(number / 10);
-      const units = number % 10;
-      doc.text(String(tens), cx, rulerYTop, { lineBreak: false });
-      doc.text(String(units), cx, rulerYBottom, { lineBreak: false });
-    }
+    // Place digit centred in column cell
+    const cx = startX + col * boxWidth + boxWidth / 2 - rulerFontSize * 0.25;
+    doc.text(String(number), cx, rulerYTop, { lineBreak: false });
   }
 }
 
