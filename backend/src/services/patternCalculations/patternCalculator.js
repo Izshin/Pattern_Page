@@ -184,6 +184,7 @@ function calculateSweaterPattern(pat) {
  */
 function calculateHatPattern(pat) {
     const d = pat.defaults;
+    console.log('[calculateHatPattern] defaults:', JSON.stringify(d));
 
     const stitchesPerCm = d["slider-tension"].x / 10;
     const rowsPerCm     = d["slider-tension"].y / 10;
@@ -232,10 +233,15 @@ function calculateHatPattern(pat) {
         const usableRows  = totalRows - ribbingRows - rowsBeforeMotif - crownRows;
         verticalRepeats   = Math.floor(usableRows / d["motif-height-rows"]);
         if (verticalRepeats < 1) {
-            errors.push("Motif does not fit vertically on the hat body.");
+            // Motif is taller than the available body rows — place a partial motif
+            // (common practice for hats with large decorative motifs). Treat as warning.
+            warnings.push(
+                `Motif height (${d["motif-height-rows"]} rows) exceeds usable hat body (${usableRows} rows). The motif will be cropped to fit.`
+            );
+            verticalRepeats = 1; // show one (partial) repeat
         }
 
-        rowsAfterMotif = usableRows - (verticalRepeats * d["motif-height-rows"]);
+        rowsAfterMotif = Math.max(0, usableRows - (verticalRepeats * d["motif-height-rows"]));
 
         motifWidthCm  = Math.round(d["motif-width-stitches"] / stitchesPerCm);
         motifHeightCm = Math.round(d["motif-height-rows"]    / rowsPerCm);
@@ -266,6 +272,7 @@ function calculateHatPattern(pat) {
         }),
     };
 
+    console.log('[calculateHatPattern] result — errors:', errors, '| warnings:', warnings, '| calculated:', JSON.stringify(pat.calculated));
     return { pat, warnings, errors };
 }
 
@@ -319,6 +326,7 @@ function removeMotifLines(content) {
  */
 function solvePattern(pat) {
     const type = pat.type || 'blanket';
+    console.log('[solvePattern] dispatching to type:', type);
     let result;
     if (type === 'sweater') {
         result = calculateSweaterPattern(pat);

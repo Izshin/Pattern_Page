@@ -82,10 +82,10 @@ const ClothingPreview: React.FC<ClothingPreviewProps> = ({
     // Fractions that map the knittable body area inside HatPattern.png.
     // Adjust these to move the droppable rectangle (use "Show bounds" toggle to visualise).
     const HAT_BODY_FRACTIONS = useMemo(() => ({
-        left:   0.10,   // past left edge / brim start
-        top:    0.12,   // below the very top of the hat sketch
-        right:  0.90,   // before right edge
-        bottom: 0.80,   // above the brim ribbing
+        left:   0.2,   // past left edge / brim start
+        top:    0.2,   // below the very top of the hat sketch
+        right:  0.8,   // before right edge
+        bottom: 0.60,   // above the brim ribbing
     }), []);
 
     // Hat body bounds derived from hatCalc + fractions
